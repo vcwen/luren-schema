@@ -1,0 +1,24 @@
+{
+  "name": "luren-schema",
+  "version": "0.0.1",
+  "description": "schema for luren",
+  "main": "main.js",
+  "repository": "https://github.com/vcwen/luren-schema.git",
+  "author": "Vincent Wen <wenwei1202@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/mongodb": "^3.1.25",
+    "immutable": "^4.0.0-rc.12",
+    "lodash": "^4.17.11",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.12",
+    "@types/lodash": "^4.14.123",
+    "@types/node": "^11.13.8",
+    "jest": "^24.7.1",
+    "mongodb": "^3.2.3",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.4.5"
+  }
+}
