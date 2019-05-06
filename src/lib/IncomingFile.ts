@@ -2,7 +2,7 @@ import { Schema } from '../decorators/schema'
 import { Prop } from '../decorators/Prop'
 
 @Schema()
-export default class IncomingFile {
+export class IncomingFile {
   @Prop()
   public size: number
   public path: string
@@ -16,3 +16,5 @@ export default class IncomingFile {
     this.size = size
   }
 }
+
+export default IncomingFile

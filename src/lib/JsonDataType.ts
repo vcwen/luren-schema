@@ -233,7 +233,7 @@ class ObjectJsonProcessor implements ITypeJsonProcessor {
   }
 }
 
-const jsonDataType = new JsonDataType()
+export const jsonDataType = new JsonDataType()
 jsonDataType.add('string', new StringJsonProcessor())
 jsonDataType.add('boolean', new BooleanJsonProcessor())
 jsonDataType.add('number', new NumberJsonProcessor())

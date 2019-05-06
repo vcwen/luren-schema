@@ -171,6 +171,6 @@ export const normalizeSimpleSchema = (schema: any): any => {
   if (_.isEmpty(schema)) {
     throw new Error('Invalid schema.')
   }
-  const [jsonSchema] = convertSimpleSchemaToJsSchema(schema)
-  return jsonSchema
+  const [jsSchema] = convertSimpleSchemaToJsSchema(schema)
+  return jsSchema
 }
