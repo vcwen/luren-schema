@@ -71,7 +71,7 @@ export const addType = (type: string, processor: IJsonProcessor) => {
   jsonDataType.add(type, processor)
 }
 
-export const jsonToData = (json: any, schema: IJsSchema) => {
+export const deserialize = (json: any, schema: IJsSchema) => {
   const validate = getJsonValidate(schema)
   const [valid, msg] = validate(schema, json)
   if (!valid) {
@@ -81,7 +81,7 @@ export const jsonToData = (json: any, schema: IJsSchema) => {
   return deserialize(schema, json)
 }
 
-export const dataToJson = (data: any, schema: IJsSchema) => {
+export const serialize = (data: any, schema: IJsSchema) => {
   const serialize = getJsonSerialize(schema)
   return serialize(schema, data)
 }
@@ -173,4 +173,38 @@ export const normalizeSimpleSchema = (schema: any): any => {
   }
   const [jsSchema] = convertSimpleSchemaToJsSchema(schema)
   return jsSchema
+}
+
+export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
+  const jsonSchema = _.cloneDeep(schema) as any
+  if (jsonSchema.json && jsonSchema.json.type) {
+    jsonSchema.type = jsonSchema.json.type
+  }
+  Reflect.deleteProperty(jsonSchema, 'json')
+  Reflect.deleteProperty(jsonSchema, 'modelConstructor')
+  if (jsonSchema.items) {
+    jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)
+  }
+  const properties = jsonSchema.properties
+  if (properties) {
+    jsonSchema.properties = {}
+    const props = Object.getOwnPropertyNames(properties)
+    for (const prop of props) {
+      const propSchema = properties[prop]
+      const key = _.get(propSchema, 'json.name', prop)
+      jsonSchema.properties[key] = jsSchemaToJsonSchema(propSchema)
+      if (key !== prop && jsonSchema.required) {
+        const index = jsonSchema.required.indexOf(prop)
+        if (index !== -1) {
+          jsonSchema.required[index] = key
+        }
+      }
+    }
+  }
+  return jsonSchema
+}
+
+export const validate = (data: any, schema: IJsSchema) => {
+  const validate = getJsonValidate(schema)
+  return validate(data, schema)
 }

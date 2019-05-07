@@ -16,7 +16,6 @@ export interface ITypeJsonProcessor {
 }
 
 export interface IJsSchema {
-  title?: string
   json?: IJsonProcessor
   type: string
   modelConstructor?: Constructor<any>
