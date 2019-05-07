@@ -71,7 +71,7 @@ export const addType = (type: string, processor: IJsonProcessor) => {
   jsonDataType.add(type, processor)
 }
 
-export const deserialize = (json: any, schema: IJsSchema) => {
+export const deserialize = (schema: IJsSchema, json: any) => {
   const validate = getJsonValidate(schema)
   const [valid, msg] = validate(schema, json)
   if (!valid) {
@@ -81,7 +81,7 @@ export const deserialize = (json: any, schema: IJsSchema) => {
   return deserialize(schema, json)
 }
 
-export const serialize = (data: any, schema: IJsSchema) => {
+export const serialize = (schema: IJsSchema, data: any) => {
   const serialize = getJsonSerialize(schema)
   return serialize(schema, data)
 }
@@ -204,7 +204,7 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
   return jsonSchema
 }
 
-export const validate = (data: any, schema: IJsSchema) => {
+export const validate = (schema: IJsSchema, data: any) => {
   const validate = getJsonValidate(schema)
-  return validate(data, schema)
+  return validate(schema, data)
 }
