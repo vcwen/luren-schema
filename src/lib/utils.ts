@@ -1,31 +1,32 @@
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
 import _ from 'lodash'
-import { Constructor, IJsSchema, IJsonProcessor } from '../types'
+import { Constructor, IJsSchema, IJsonOptions, ITypeJsonOptions } from '../types'
 import jsonDataType, { JsonDataType } from './JsonDataType'
+import dataType from './DataType'
 
-export const getJsonProcessor = (schema: IJsSchema, dataType: JsonDataType) => {
-  const jsonProcessor = schema.json || dataType.get(schema.type)
-  if (!jsonProcessor) {
+export const getJsonOptions = (schema: IJsSchema, dataType: JsonDataType): IJsonOptions => {
+  const jsonOptions = schema.json || dataType.get(schema.type)
+  if (!jsonOptions) {
     throw new Error(`Unknown json type:${schema.type}`)
   }
-  return jsonProcessor
+  return jsonOptions
 }
 
-export const getJsonValidate = (schema: IJsSchema) => {
+export const getJsonValidate = (schema: IJsSchema): ((schema: IJsSchema, data: any) => [boolean, string]) => {
   if (schema.json && schema.json.validate) {
     return schema.json.validate
   } else {
     const type = schema.type
-    const jsonProcessor = jsonDataType.get(type)
-    if (!jsonProcessor) {
+    const jsonOptions = jsonDataType.get(type)
+    if (!jsonOptions) {
       throw new Error(`Unknown json type:${type}`)
     }
-    const validate = jsonProcessor.validate
-    if (!validate) {
-      throw new Error(`No validate for type:${type}`)
+    if (jsonOptions && jsonOptions.validate) {
+      return jsonOptions.validate
+    } else {
+      return () => [true, '']
     }
-    return validate
   }
 }
 export const getJsonSerialize = (schema: IJsSchema) => {
@@ -33,15 +34,12 @@ export const getJsonSerialize = (schema: IJsSchema) => {
     return schema.json.serialize
   } else {
     const type = schema.type
-    const jsonProcessor = jsonDataType.get(type)
-    if (!jsonProcessor) {
-      throw new Error(`Unknown json type:${type}`)
+    const jsonOptions = jsonDataType.get(type)
+    if (jsonOptions && jsonOptions.serialize) {
+      return jsonOptions.serialize
+    } else {
+      return (_1: IJsSchema, data: any) => data
     }
-    const serialize = jsonProcessor.serialize
-    if (!serialize) {
-      throw new Error(`No serialize for type:${type}`)
-    }
-    return serialize
   }
 }
 
@@ -50,15 +48,12 @@ export const getJsonDeserialize = (schema: IJsSchema) => {
     return schema.json.deserialize
   } else {
     const type = schema.type
-    const jsonProcessor = jsonDataType.get(type)
-    if (!jsonProcessor) {
-      throw new Error(`Unknown json type:${type}`)
+    const jsonOptions = jsonDataType.get(type)
+    if (jsonOptions && jsonOptions.deserialize) {
+      return jsonOptions.deserialize
+    } else {
+      return (_1: IJsSchema, data: any) => data
     }
-    const deserialize = jsonProcessor.deserialize
-    if (!deserialize) {
-      throw new Error(`No deserialize for type:${type}`)
-    }
-    return deserialize
   }
 }
 
@@ -67,7 +62,7 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
   Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
 }
 
-export const addType = (type: string, processor: IJsonProcessor) => {
+export const addType = (type: string, processor: ITypeJsonOptions) => {
   jsonDataType.add(type, processor)
 }
 
@@ -204,7 +199,22 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
   return jsonSchema
 }
 
-export const validate = (schema: IJsSchema, data: any) => {
+export const validateJson = (schema: IJsSchema, data: any) => {
   const validate = getJsonValidate(schema)
   return validate(schema, data)
+}
+
+export const validate = (schema: IJsSchema, data: any) => {
+  let schemaValidate = schema.validate
+  if (schemaValidate) {
+    return schemaValidate(schema, data)
+  } else {
+    const typeOptions = dataType.get(schema.type)
+    if (typeOptions) {
+      schemaValidate = typeOptions.validate
+      return schemaValidate(schema, data)
+    } else {
+      return [true, []]
+    }
+  }
 }

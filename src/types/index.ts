@@ -1,6 +1,6 @@
 export type Constructor<T> = new (...args: any[]) => T
 
-export interface IJsonProcessor {
+export interface IJsonOptions {
   name?: string
   type?: string
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
@@ -8,7 +8,7 @@ export interface IJsonProcessor {
   deserialize?: (schema: IJsSchema, data: any) => any
 }
 
-export interface ITypeJsonProcessor {
+export interface ITypeJsonOptions {
   type: string
   validate: (schema: IJsSchema, data: any) => [boolean, string]
   serialize: (schema: IJsSchema, data: any) => any
@@ -16,13 +16,18 @@ export interface ITypeJsonProcessor {
 }
 
 export interface IJsSchema {
-  json?: IJsonProcessor
+  json?: IJsonOptions
   type: string
   modelConstructor?: Constructor<any>
+  validate?: (schema: IJsSchema, data: any) => [boolean, string]
   format?: string
   properties?: { [prop: string]: IJsSchema }
   items?: IJsSchema
   required?: string[]
   description?: string
   [prop: string]: any
+}
+
+export interface ITypeOptions {
+  validate: (schema: IJsSchema, data: any) => [boolean, string]
 }

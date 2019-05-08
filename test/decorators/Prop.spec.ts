@@ -25,7 +25,7 @@ describe('Prop', () => {
   it('should return decorator function when schema options is set', () => {
     // tslint:disable-next-line:max-classes-per-file
     class TestController {
-      @Prop({ jsonName: 'myName', required: true, type: 'number' })
+      @Prop({ json: { name: 'myName' }, required: true, type: 'number' })
       public name!: string
     }
     const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)

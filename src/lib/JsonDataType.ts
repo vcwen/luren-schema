@@ -1,11 +1,11 @@
-import { IJsonProcessor, IJsSchema, ITypeJsonProcessor } from '../types'
-import { getJsonProcessor, getJsonDeserialize, getJsonValidate, getJsonSerialize } from './utils'
+import { IJsSchema, ITypeJsonOptions } from '../types'
+import { getJsonOptions, getJsonDeserialize, getJsonValidate, getJsonSerialize } from './utils'
 import { Map } from 'immutable'
 import _ from 'lodash'
 
 export class JsonDataType {
-  private _types = Map<string, IJsonProcessor>()
-  public add(type: string, processor: IJsonProcessor) {
+  private _types = Map<string, ITypeJsonOptions>()
+  public add(type: string, processor: ITypeJsonOptions) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
     }
@@ -14,20 +14,9 @@ export class JsonDataType {
   public get(type: string) {
     return this._types.get(type)
   }
-  public getJsonValidate(type: string) {
-    const jsonProcessor = this._types.get(type)
-    if (!jsonProcessor) {
-      throw new Error(`Unknown json type:${type}`)
-    }
-    const validate = jsonProcessor.validate
-    if (!validate) {
-      throw new Error(`No default validate for type:${type}`)
-    }
-    return validate
-  }
 }
 
-class StringJsonProcessor implements ITypeJsonProcessor {
+class StringJsonProcessor implements ITypeJsonOptions {
   public type: string = 'string'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'string') {
@@ -51,7 +40,7 @@ class StringJsonProcessor implements ITypeJsonProcessor {
     }
   }
 }
-class BooleanJsonProcessor implements ITypeJsonProcessor {
+class BooleanJsonProcessor implements ITypeJsonOptions {
   public type: string = 'boolean'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'boolean') {
@@ -76,7 +65,7 @@ class BooleanJsonProcessor implements ITypeJsonProcessor {
   }
 }
 
-class NumberJsonProcessor implements ITypeJsonProcessor {
+class NumberJsonProcessor implements ITypeJsonOptions {
   public type: string = 'number'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'number') {
@@ -101,7 +90,7 @@ class NumberJsonProcessor implements ITypeJsonProcessor {
   }
 }
 
-class ArrayJsonProcessor implements ITypeJsonProcessor {
+class ArrayJsonProcessor implements ITypeJsonOptions {
   public type: string = 'array'
   public validate(schema: IJsSchema, val: any): [boolean, string] {
     if (Array.isArray(val)) {
@@ -154,7 +143,7 @@ class ArrayJsonProcessor implements ITypeJsonProcessor {
   }
 }
 
-class ObjectJsonProcessor implements ITypeJsonProcessor {
+class ObjectJsonProcessor implements ITypeJsonOptions {
   public type: string = 'object'
   public validate(schema: IJsSchema, data: any): [boolean, string] {
     if (typeof data !== 'object') {
@@ -164,7 +153,7 @@ class ObjectJsonProcessor implements ITypeJsonProcessor {
       const requiredProps = schema.required
       if (requiredProps) {
         for (const prop of requiredProps) {
-          const jsonProcessor = getJsonProcessor(properties[prop], jsonDataType)
+          const jsonProcessor = getJsonOptions(properties[prop], jsonDataType)
           const key = jsonProcessor.name || prop
           if (Reflect.get(data, key) === undefined) {
             return [false, `${key} is required`]

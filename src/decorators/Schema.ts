@@ -2,7 +2,7 @@ import { Map } from 'immutable'
 import _ from 'lodash'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
-import { Constructor, IJsSchema, IJsonProcessor } from '../types'
+import { Constructor, IJsSchema, IJsonOptions } from '../types'
 import { PropMetadata } from './Prop'
 import { getJsonValidate, getJsonSerialize, getJsonDeserialize } from '../lib/utils'
 import jsonDataType from '../lib/JsonDataType'
@@ -57,7 +57,7 @@ export function Schema(options: ISchemaOptions = {}) {
     }
 
     const metadata = new SchemaMetadata(options.id || constructor.name, jsSchema, options.desc)
-    const jsonProcessor: IJsonProcessor = {} as any
+    const jsonProcessor: IJsonOptions = {} as any
     const type = metadata.schema.type
     jsonProcessor.type = options.jsonType || type
     const validate = options.validate

@@ -2,7 +2,7 @@ import { Map } from 'immutable'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
 import { normalizeSimpleSchema, getJsonValidate, getJsonSerialize, getJsonDeserialize } from '../lib/utils'
-import { IJsonProcessor, IJsSchema } from '../types'
+import { IJsonOptions, IJsSchema } from '../types'
 import jsonDataType from '../lib/JsonDataType'
 
 export interface IPropOptions {
@@ -16,15 +16,17 @@ export interface IPropOptions {
   strict?: boolean
   private?: boolean
   default?: any
-  jsonName?: string
-  jsonType?: string
-  validate?: (
-    schema: any,
-    data: any,
-    defaultValidate?: (schema: any, data: any) => [boolean, string]
-  ) => [boolean, string]
-  serialize?: (schema: any, data: any, defaultSerialize?: (schema: any, data: any) => any) => any
-  deserialize?: (schema: any, data: any, defaultDeserialize?: (schema: any, data: any) => any) => any
+  json?: {
+    name?: string
+    type?: string
+    validate?: (
+      schema: any,
+      data: any,
+      defaultValidate?: (schema: any, data: any) => [boolean, string]
+    ) => [boolean, string]
+    serialize?: (schema: any, data: any, defaultSerialize?: (schema: any, data: any) => any) => any
+    deserialize?: (schema: any, data: any, defaultDeserialize?: (schema: any, data: any) => any) => any
+  }
 }
 
 export class PropMetadata {
@@ -45,8 +47,7 @@ export class PropMetadata {
 }
 
 const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string) => {
-  const name = options.jsonName || propertyKey
-  const metadata = new PropMetadata(name, options.required)
+  const metadata = new PropMetadata(propertyKey, options.required)
   if (options.schema) {
     metadata.schema = options.schema
   } else {
@@ -60,38 +61,40 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   if (metadata.private) {
     metadata.schema.private = true
   }
-  const jsonProcessor: IJsonProcessor = metadata.schema.json || ({} as any)
-  const type = metadata.schema.type
-  jsonProcessor.name = options.jsonName || propertyKey
-  jsonProcessor.type = options.jsonType || type
-  const validate = options.validate
-  if (validate) {
-    jsonProcessor.validate = (schema: IJsSchema, data: any) => {
-      const defaultProcessor = jsonDataType.get(schema.type)
-      return validate(schema, data, defaultProcessor ? defaultProcessor.validate : undefined)
+  if (options.json) {
+    const json = options.json
+    const jsonOptions: IJsonOptions = {} as any
+    jsonOptions.name = json.name
+    jsonOptions.type = json.type
+    const validate = json.validate
+    if (validate) {
+      jsonOptions.validate = (schema: IJsSchema, data: any) => {
+        const defaultProcessor = jsonDataType.get(schema.type)
+        return validate(schema, data, defaultProcessor ? defaultProcessor.validate : undefined)
+      }
+    } else if (!jsonOptions.validate) {
+      jsonOptions.validate = getJsonValidate(metadata.schema)
     }
-  } else if (!jsonProcessor.validate) {
-    jsonProcessor.validate = getJsonValidate(metadata.schema)
-  }
-  const serialize = options.serialize
-  if (serialize) {
-    jsonProcessor.serialize = (schema: IJsSchema, data: any) => {
-      const defaultProcessor = jsonDataType.get(schema.type)
-      return serialize(schema, data, defaultProcessor ? defaultProcessor.serialize : undefined)
+    const serialize = json.serialize
+    if (serialize) {
+      jsonOptions.serialize = (schema: IJsSchema, data: any) => {
+        const defaultProcessor = jsonDataType.get(schema.type)
+        return serialize(schema, data, defaultProcessor ? defaultProcessor.serialize : undefined)
+      }
+    } else if (!jsonOptions.serialize) {
+      jsonOptions.serialize = getJsonSerialize(metadata.schema)
     }
-  } else if (!jsonProcessor.serialize) {
-    jsonProcessor.serialize = getJsonSerialize(metadata.schema)
-  }
-  const deserialize = options.deserialize
-  if (deserialize) {
-    jsonProcessor.deserialize = (schema: IJsSchema, data: any) => {
-      const defaultProcessor = jsonDataType.get(schema.type)
-      return deserialize(schema, data, defaultProcessor ? defaultProcessor.deserialize : undefined)
+    const deserialize = json.deserialize
+    if (deserialize) {
+      jsonOptions.deserialize = (schema: IJsSchema, data: any) => {
+        const defaultProcessor = jsonDataType.get(schema.type)
+        return deserialize(schema, data, defaultProcessor ? defaultProcessor.deserialize : undefined)
+      }
+    } else if (!jsonOptions.deserialize) {
+      jsonOptions.deserialize = getJsonDeserialize(metadata.schema)
     }
-  } else if (!jsonProcessor.deserialize) {
-    jsonProcessor.deserialize = getJsonDeserialize(metadata.schema)
+    metadata.schema.json = jsonOptions
   }
-  metadata.schema.json = jsonProcessor
   return metadata
 }
 

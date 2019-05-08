@@ -1,9 +1,9 @@
 import jsonDataType from '../../src/lib/JsonDataType'
-import { IJsonProcessor } from '../../src'
+import { IJsonOptions } from '../../src'
 
 describe('StringJsonProcessor', () => {
   it('should have string type', () => {
-    const stringProcessor = jsonDataType.get('string') as IJsonProcessor
+    const stringProcessor = jsonDataType.get('string') as IJsonOptions
     expect(stringProcessor.type).toBe('string')
   })
 })
