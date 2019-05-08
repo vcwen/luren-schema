@@ -204,7 +204,7 @@ export const validateJson = (schema: IJsSchema, data: any) => {
   return validate(schema, data)
 }
 
-export const validate = (schema: IJsSchema, data: any) => {
+export const validate = (schema: IJsSchema, data: any): [boolean, string] => {
   let schemaValidate = schema.validate
   if (schemaValidate) {
     return schemaValidate(schema, data)
@@ -214,7 +214,7 @@ export const validate = (schema: IJsSchema, data: any) => {
       schemaValidate = typeOptions.validate
       return schemaValidate(schema, data)
     } else {
-      return [true, []]
+      return [true, '']
     }
   }
 }
