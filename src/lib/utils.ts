@@ -1,7 +1,7 @@
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
 import _ from 'lodash'
-import { Constructor, IJsSchema, IJsonOptions, ITypeJsonOptions } from '../types'
+import { Constructor, IJsSchema, IJsonOptions } from '../types'
 import jsonDataType, { JsonDataType } from './JsonDataType'
 import dataType from './DataType'
 
@@ -62,8 +62,8 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
   Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
 }
 
-export const addType = (type: string, processor: ITypeJsonOptions) => {
-  jsonDataType.add(type, processor)
+export const addType = (type: string, options: IJsonOptions) => {
+  jsonDataType.add(type, options)
 }
 
 export const deserialize = (schema: IJsSchema, json: any) => {
@@ -172,10 +172,16 @@ export const normalizeSimpleSchema = (schema: any): any => {
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
   const jsonSchema = _.cloneDeep(schema) as any
-  if (jsonSchema.json && jsonSchema.json.type) {
-    jsonSchema.type = jsonSchema.json.type
+  if (jsonSchema.json) {
+    if (jsonSchema.json.type) {
+      jsonSchema.type = jsonSchema.json.type
+    }
+    if (jsonSchema.json.additionalProps) {
+      Object.assign(jsonSchema, jsonSchema.json.additionalProps)
+    }
+    Reflect.deleteProperty(jsonSchema, 'json')
   }
-  Reflect.deleteProperty(jsonSchema, 'json')
+
   Reflect.deleteProperty(jsonSchema, 'modelConstructor')
   if (jsonSchema.items) {
     jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)

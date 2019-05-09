@@ -3,16 +3,10 @@ export type Constructor<T> = new (...args: any[]) => T
 export interface IJsonOptions {
   name?: string
   type?: string
+  additionalProps?: { [key: string]: any }
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
   serialize?: (schema: IJsSchema, data: any) => any
   deserialize?: (schema: IJsSchema, data: any) => any
-}
-
-export interface ITypeJsonOptions {
-  type: string
-  validate: (schema: IJsSchema, data: any) => [boolean, string]
-  serialize: (schema: IJsSchema, data: any) => any
-  deserialize: (schema: IJsSchema, data: any) => any
 }
 
 export interface IJsSchema {

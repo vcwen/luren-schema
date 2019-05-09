@@ -1,11 +1,11 @@
-import { IJsSchema, ITypeJsonOptions } from '../types'
+import { IJsSchema, IJsonOptions } from '../types'
 import { getJsonOptions, getJsonDeserialize, getJsonValidate, getJsonSerialize } from './utils'
 import { Map } from 'immutable'
 import _ from 'lodash'
 
 export class JsonDataType {
-  private _types = Map<string, ITypeJsonOptions>()
-  public add(type: string, processor: ITypeJsonOptions) {
+  private _types = Map<string, IJsonOptions>()
+  public add(type: string, processor: IJsonOptions) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
     }
@@ -16,7 +16,7 @@ export class JsonDataType {
   }
 }
 
-class StringJsonProcessor implements ITypeJsonOptions {
+class StringJsonProcessor implements IJsonOptions {
   public type: string = 'string'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'string') {
@@ -40,7 +40,7 @@ class StringJsonProcessor implements ITypeJsonOptions {
     }
   }
 }
-class BooleanJsonProcessor implements ITypeJsonOptions {
+class BooleanJsonProcessor implements IJsonOptions {
   public type: string = 'boolean'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'boolean') {
@@ -65,7 +65,7 @@ class BooleanJsonProcessor implements ITypeJsonOptions {
   }
 }
 
-class NumberJsonProcessor implements ITypeJsonOptions {
+class NumberJsonProcessor implements IJsonOptions {
   public type: string = 'number'
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'number') {
@@ -90,7 +90,7 @@ class NumberJsonProcessor implements ITypeJsonOptions {
   }
 }
 
-class ArrayJsonProcessor implements ITypeJsonOptions {
+class ArrayJsonProcessor implements IJsonOptions {
   public type: string = 'array'
   public validate(schema: IJsSchema, val: any): [boolean, string] {
     if (Array.isArray(val)) {
@@ -143,7 +143,7 @@ class ArrayJsonProcessor implements ITypeJsonOptions {
   }
 }
 
-class ObjectJsonProcessor implements ITypeJsonOptions {
+class ObjectJsonProcessor implements IJsonOptions {
   public type: string = 'object'
   public validate(schema: IJsSchema, data: any): [boolean, string] {
     if (typeof data !== 'object') {
