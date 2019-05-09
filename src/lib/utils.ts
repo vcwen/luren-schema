@@ -66,17 +66,24 @@ export const addType = (type: string, options: IJsonOptions) => {
   jsonDataType.add(type, options)
 }
 
-export const deserialize = (schema: IJsSchema, json: any) => {
-  const validate = getJsonValidate(schema)
-  const [valid, msg] = validate(schema, json)
-  if (!valid) {
-    throw new Error(msg)
+export const deserialize = (schema: IJsSchema, json: any, validated: boolean = false) => {
+  if (!validated) {
+    const [valid, msg] = validateJson(schema, json)
+    if (!valid) {
+      throw new Error(msg)
+    }
   }
   const deserialize = getJsonDeserialize(schema)
   return deserialize(schema, json)
 }
 
-export const serialize = (schema: IJsSchema, data: any) => {
+export const serialize = (schema: IJsSchema, data: any, validated: boolean = false) => {
+  if (!validated) {
+    const [valid, msg] = validate(schema, data)
+    if (!valid) {
+      throw new Error(msg)
+    }
+  }
   const serialize = getJsonSerialize(schema)
   return serialize(schema, data)
 }
