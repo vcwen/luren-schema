@@ -173,7 +173,7 @@ class ObjectTypeOptions implements ITypeOptions {
       const propNames = Object.getOwnPropertyNames(properties)
       for (const prop of propNames) {
         const propSchema = properties[prop]
-        const validate = getValidate(schema)
+        const validate = getValidate(propSchema)
         const value = Reflect.get(data, prop)
         if (validate) {
           const [valid, msg] = validate(propSchema, value)
