@@ -1,87 +1,241 @@
 import { IJsSchema, ITypeOptions } from '../types'
 import { Map } from 'immutable'
 import _ from 'lodash'
+import { getValidate, getSerialize, getDeserialize } from './utils'
 
 export class DataType {
-  private _types = Map<string, ITypeOptions>()
-  public add(type: string, options: ITypeOptions) {
+  private static _types = Map<string, ITypeOptions>()
+  public static add(type: string, options: ITypeOptions) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
     }
     this._types = this._types.set(type, options)
   }
-  public get(type: string) {
+  public static get(type: string) {
     return this._types.get(type)
   }
 }
 
-export const dataType = new DataType()
-dataType.add('string', {
-  validate: (_1: IJsSchema, data: any): [boolean, string] => {
-    if (typeof data === 'string') {
+class StringTypeOptions implements ITypeOptions {
+  public validate(_1: IJsSchema, val: any): [boolean, string] {
+    if (typeof val === 'string') {
       return [true, '']
     } else {
-      return [false, `Invalid string value:${data}`]
+      return [false, `Invalid string:${val}`]
     }
   }
-})
-dataType.add('boolean', {
-  validate: (_1: IJsSchema, data: any): [boolean, string] => {
-    if (typeof data === 'boolean') {
+  public serialize(_1: IJsSchema, val: any) {
+    if (val === undefined) {
+      return undefined
+    } else {
+      return typeof val === 'string' ? val : JSON.stringify(val)
+    }
+  }
+  public deserialize(schema: IJsSchema, val?: string) {
+    if (val === undefined) {
+      return schema.defaultVal
+    } else {
+      return val
+    }
+  }
+}
+
+class BooleanTypeOptions implements ITypeOptions {
+  public validate(_1: IJsSchema, val: any): [boolean, string] {
+    if (typeof val === 'boolean') {
       return [true, '']
     } else {
-      return [false, `Invalid boolean value:${data}`]
+      return [false, `Invalid boolean: ${val}`]
     }
   }
-})
-dataType.add('number', {
-  validate: (_1: IJsSchema, data: any): [boolean, string] => {
-    if (typeof data === 'number') {
+  public serialize(_1: IJsSchema, val: any) {
+    if (val === undefined) {
+      return undefined
+    } else {
+      return val ? true : false
+    }
+  }
+  public deserialize(schema: IJsSchema, val?: boolean) {
+    if (val === undefined) {
+      return schema.default
+    } else {
+      return val
+    }
+  }
+}
+class NumberTypeOptions implements ITypeOptions {
+  public validate(_1: IJsSchema, val: any): [boolean, string] {
+    if (typeof val === 'number') {
       return [true, '']
     } else {
-      return [false, `Invalid number value:${data}`]
+      return [false, `invalid number: ${val}`]
     }
   }
-})
-dataType.add('array', {
-  validate: (_1: IJsSchema, data: any): [boolean, string] => {
-    if (Array.isArray(data)) {
-      return [true, '']
+  serialize(_1: IJsSchema, val: any) {
+    if (val === undefined) {
+      return undefined
     } else {
-      return [false, `Invalid array value:${data}`]
+      return Number.parseFloat(val)
     }
   }
-})
-dataType.add('object', {
-  validate: (schema: IJsSchema, data: any): [boolean, string] => {
-    if (typeof data !== 'object') {
-      return [false, `Invalid boolean value:${data}`]
+  deserialize(schema: IJsSchema, val?: number) {
+    if (val === undefined) {
+      return schema.default
     } else {
-      const properties = schema.properties
-      if (!properties || _.isEmpty(properties)) {
-        return [true, '']
-      } else {
-        const props = Object.getOwnPropertyNames(properties)
-        for (const prop of props) {
-          const propSchema = properties[prop]
-          let validate = propSchema.validate
-          if (!validate) {
-            const options = dataType.get(propSchema.type)
-            if (options) {
-              validate = options.validate
-            } else {
-              // return true if the type is not set
-              validate = () => [true, '']
+      return val
+    }
+  }
+}
+class ArrayTypeOptions implements ITypeOptions {
+  public type: string = 'array'
+  public validate(schema: IJsSchema, val: any): [boolean, string] {
+    if (Array.isArray(val)) {
+      const itemSchema = schema.items
+      if (itemSchema) {
+        const validate = getValidate(itemSchema)
+        for (let i = 0; i < val.length; i++) {
+          if (validate) {
+            const [valid, msg] = validate(itemSchema, val[i])
+            if (!valid) {
+              return [valid, `[${i}]${msg}`]
             }
           }
-          const [valid, msg] = validate(propSchema, Reflect.get(data, prop))
-          if (!valid) {
-            return [false, msg]
-          }
         }
-        return [true, '']
+      }
+      return [true, '']
+    } else {
+      return [false, 'Invalid array']
+    }
+  }
+  serialize(schema: IJsSchema, val: any) {
+    if (val === undefined) {
+      return undefined
+    } else {
+      if (Array.isArray(val)) {
+        const itemSchema = schema.items
+        if (itemSchema) {
+          const serialize = getSerialize(itemSchema)
+          if (serialize) {
+            return val.map((item) => serialize(itemSchema, item))
+          } else {
+            return val
+          }
+        } else {
+          return val
+        }
+      } else {
+        throw new Error('Data must be an array')
       }
     }
   }
-})
-export default dataType
+  deserialize(schema: IJsSchema, val?: any[]) {
+    if (val === undefined) {
+      return schema.default
+    } else {
+      if (Array.isArray(val)) {
+        const itemSchema = schema.items
+        if (itemSchema) {
+          const deserialize = getDeserialize(itemSchema)
+          if (deserialize) {
+            return val.map((item) => deserialize(itemSchema, item))
+          } else {
+            return val
+          }
+        } else {
+          return val
+        }
+      }
+    }
+  }
+}
+
+class ObjectTypeOptions implements ITypeOptions {
+  public type: string = 'object'
+  public validate(schema: IJsSchema, data: any, dataType?: string): [boolean, string] {
+    if (typeof data !== 'object') {
+      return [false, 'Invalid object']
+    } else {
+      const properties = schema.properties || {}
+      const requiredProps = schema.required
+      if (requiredProps) {
+        for (const prop of requiredProps) {
+          if (Reflect.get(data, prop) === undefined) {
+            return [false, `${prop} is required`]
+          }
+        }
+      }
+
+      const propNames = Object.getOwnPropertyNames(properties)
+      for (const prop of propNames) {
+        const propSchema = properties[prop]
+        const validate = getValidate(schema, dataType)
+        let value = Reflect.get(data, prop)
+        if (validate) {
+          const [valid, msg] = validate(propSchema, value)
+          if (!valid) {
+            return [valid, msg]
+          }
+        }
+      }
+      return [true, '']
+    }
+  }
+  public serialize(schema: IJsSchema, data?: object, dataType?: string) {
+    if (data === undefined) {
+      return undefined
+    } else {
+      const properties = schema.properties
+      const json: any = {}
+      if (properties) {
+        const propNames = Object.getOwnPropertyNames(properties)
+        for (const prop of propNames) {
+          const propSchema = properties[prop]
+          if (propSchema.json && propSchema.json.disabled) {
+            continue
+          }
+          const serialize = getSerialize(propSchema, dataType)
+          let value = Reflect.get(data, prop)
+          if (serialize) {
+            value = serialize(propSchema, value)
+          }
+          Reflect.set(json, prop, value)
+        }
+      } else {
+        Object.assign(json, data)
+      }
+      return json
+    }
+  }
+  deserialize(schema: IJsSchema, data?: object, dataType?: string) {
+    if (data === undefined) {
+      return schema.default
+    } else {
+      const obj = schema.classConstructor ? new schema.classConstructor() : {}
+      const properties = schema.properties
+      if (properties) {
+        const propNames = Object.getOwnPropertyNames(properties)
+        for (const prop of propNames) {
+          const propSchema = properties[prop]
+          if (propSchema.json && propSchema.json.disabled) {
+            continue
+          }
+          const deserialize = getDeserialize(propSchema, dataType)
+          let value = Reflect.get(data, prop)
+          if (deserialize) {
+            value = deserialize(propSchema, value)
+          }
+          Reflect.set(obj, prop, value)
+        }
+      } else {
+        Object.assign(obj, data)
+      }
+      return obj
+    }
+  }
+}
+
+DataType.add('string', new StringTypeOptions())
+DataType.add('boolean', new BooleanTypeOptions())
+DataType.add('number', new NumberTypeOptions())
+DataType.add('array', new ArrayTypeOptions())
+DataType.add('object', new ObjectTypeOptions())

@@ -1,60 +1,46 @@
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
 import _ from 'lodash'
-import { Constructor, IJsSchema, IJsonOptions } from '../types'
-import jsonDataType, { JsonDataType } from './JsonDataType'
-import dataType from './DataType'
+import { Constructor, IJsSchema } from '../types'
+import { DataType } from './DataType'
 
-export const getJsonOptions = (schema: IJsSchema, dataType: JsonDataType): IJsonOptions => {
-  const jsonOptions = schema.json || dataType.get(schema.type)
-  if (!jsonOptions) {
-    throw new Error(`Unknown json type:${schema.type}`)
-  }
-  return jsonOptions
-}
-
-export const getJsonValidate = (schema: IJsSchema): ((schema: IJsSchema, data: any) => [boolean, string]) => {
-  if (schema.json && schema.json.validate) {
-    return schema.json.validate
-  } else {
+export const getTypeOption = (
+  prop: string,
+  schema: IJsSchema,
+  dataType?: string
+): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
+  const propPath = dataType ? [dataType, prop].join('.') : prop
+  let property = _.get(schema, propPath)
+  if (!property) {
     const type = schema.type
-    const jsonOptions = jsonDataType.get(type)
-    if (!jsonOptions) {
-      throw new Error(`Unknown json type:${type}`)
+    const typeOptions = DataType.get(type)
+    if (typeOptions) {
+      property = _.get(typeOptions, propPath, typeOptions.validate)
     }
-    if (jsonOptions && jsonOptions.validate) {
-      return jsonOptions.validate
-    } else {
-      return () => [true, '']
-    }
-  }
-}
-export const getJsonSerialize = (schema: IJsSchema) => {
-  if (schema.json && schema.json.serialize) {
-    return schema.json.serialize
-  } else {
-    const type = schema.type
-    const jsonOptions = jsonDataType.get(type)
-    if (jsonOptions && jsonOptions.serialize) {
-      return jsonOptions.serialize
-    } else {
-      return (_1: IJsSchema, data: any) => data
+    if (property) {
+      return property
     }
   }
 }
 
-export const getJsonDeserialize = (schema: IJsSchema) => {
-  if (schema.json && schema.json.deserialize) {
-    return schema.json.deserialize
-  } else {
-    const type = schema.type
-    const jsonOptions = jsonDataType.get(type)
-    if (jsonOptions && jsonOptions.deserialize) {
-      return jsonOptions.deserialize
-    } else {
-      return (_1: IJsSchema, data: any) => data
-    }
-  }
+export const getValidate = (
+  schema: IJsSchema,
+  dataType?: string
+): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
+  return getTypeOption('validate', schema, dataType)
+}
+export const getSerialize = (
+  schema: IJsSchema,
+  dataType?: string
+): ((schema: IJsSchema, data: any) => any) | undefined => {
+  return getTypeOption('serialize', schema, dataType)
+}
+
+export const getDeserialize = (
+  schema: IJsSchema,
+  dataType?: string
+): ((schema: IJsSchema, data: any) => any) | undefined => {
+  return getTypeOption('deserialize', schema, dataType)
 }
 
 export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) => {
@@ -62,30 +48,47 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
   Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
 }
 
-export const addType = (type: string, options: IJsonOptions) => {
-  jsonDataType.add(type, options)
+export const validate = (schema: IJsSchema, data: any, dataType?: string): [boolean, string] => {
+  const validator = getValidate(schema, dataType)
+  if (validator) {
+    return validator(schema, data)
+  } else {
+    return [true, '']
+  }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, validated: boolean = false) => {
+export const deserialize = (schema: IJsSchema, json: any, options?: { dataType?: string; validated: boolean }) => {
+  const validated = (options && options.validated) || false
+  const dataType = options && options.dataType
   if (!validated) {
-    const [valid, msg] = validateJson(schema, json)
+    const [valid, msg] = validate(schema, json, dataType)
     if (!valid) {
       throw new Error(msg)
     }
   }
-  const deserialize = getJsonDeserialize(schema)
-  return deserialize(schema, json)
+  const deserialize = getDeserialize(schema, dataType)
+  if (deserialize) {
+    return deserialize(schema, json)
+  } else {
+    return json
+  }
 }
 
-export const serialize = (schema: IJsSchema, data: any, validated: boolean = false) => {
+export const serialize = (schema: IJsSchema, data: any, options?: { dataType?: string; validated: boolean }) => {
+  const validated = (options && options.validated) || false
+  const dataType = options && options.dataType
   if (!validated) {
-    const [valid, msg] = validate(schema, data)
+    const [valid, msg] = validate(schema, data, dataType)
     if (!valid) {
       throw new Error(msg)
     }
   }
-  const serialize = getJsonSerialize(schema)
-  return serialize(schema, data)
+  const serialize = getSerialize(schema, dataType)
+  if (serialize) {
+    return serialize(schema, data)
+  } else {
+    return data
+  }
 }
 
 const normalizeType = (type: string): [string, boolean] => {
@@ -165,7 +168,7 @@ export const normalizeSimpleSchema = (schema: any): any => {
   if (typeof schema === 'function') {
     const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema.prototype)
     if (schemaMetadata) {
-      return schemaMetadata.schema
+      return _.cloneDeep(schemaMetadata.schema)
     } else {
       throw new Error('Invalid schema.')
     }
@@ -179,55 +182,30 @@ export const normalizeSimpleSchema = (schema: any): any => {
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
   const jsonSchema = _.cloneDeep(schema) as any
-  if (jsonSchema.json) {
-    if (jsonSchema.json.type) {
+  if (schema.json) {
+    if (schema.json.type) {
       jsonSchema.type = jsonSchema.json.type
     }
-    if (jsonSchema.json.additionalProps) {
-      Object.assign(jsonSchema, jsonSchema.json.additionalProps)
+    if (schema.json.additionalProps) {
+      Object.assign(jsonSchema, schema.json.additionalProps)
     }
     Reflect.deleteProperty(jsonSchema, 'json')
   }
-
-  Reflect.deleteProperty(jsonSchema, 'modelConstructor')
+  Reflect.deleteProperty(jsonSchema, 'classConstructor')
   if (jsonSchema.items) {
     jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)
   }
-  const properties = jsonSchema.properties
+  const properties = schema.properties
   if (properties) {
     jsonSchema.properties = {}
     const props = Object.getOwnPropertyNames(properties)
     for (const prop of props) {
       const propSchema = properties[prop]
-      const key = _.get(propSchema, 'json.name', prop)
-      jsonSchema.properties[key] = jsSchemaToJsonSchema(propSchema)
-      if (key !== prop && jsonSchema.required) {
-        const index = jsonSchema.required.indexOf(prop)
-        if (index !== -1) {
-          jsonSchema.required[index] = key
-        }
+      if (propSchema.json && propSchema.json.disabled) {
+        continue
       }
+      jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema)
     }
   }
   return jsonSchema
-}
-
-export const validateJson = (schema: IJsSchema, data: any) => {
-  const validate = getJsonValidate(schema)
-  return validate(schema, data)
-}
-
-export const validate = (schema: IJsSchema, data: any): [boolean, string] => {
-  let schemaValidate = schema.validate
-  if (schemaValidate) {
-    return schemaValidate(schema, data)
-  } else {
-    const typeOptions = dataType.get(schema.type)
-    if (typeOptions) {
-      schemaValidate = typeOptions.validate
-      return schemaValidate(schema, data)
-    } else {
-      return [true, '']
-    }
-  }
 }

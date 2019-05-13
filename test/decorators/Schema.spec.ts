@@ -16,7 +16,7 @@ describe('Schema', () => {
         id: 'Test',
         schema: expect.objectContaining({
           type: 'object',
-          modelConstructor: expect.any(Function),
+          classConstructor: expect.any(Function),
           properties: {
             name: expect.objectContaining({
               name: 'name',

@@ -4,19 +4,13 @@ import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
 import { Constructor, IJsSchema, IJsonOptions } from '../types'
 import { PropMetadata } from './Prop'
-import { getJsonValidate, getJsonSerialize, getJsonDeserialize } from '../lib/utils'
-import jsonDataType from '../lib/JsonDataType'
 
 export interface ISchemaOptions {
   id?: string
-  validate?: (
-    schema: IJsSchema,
-    data: any,
-    defaultValidate?: (schema: IJsSchema, data: any) => [boolean, string]
-  ) => [boolean, string]
-  serialize?: (schema: IJsSchema, data: any, defaultSerialize?: (schema: IJsSchema, data: any) => any) => any
-  deserialize?: (schema: IJsSchema, data: any, defaultDeserialize?: (schema: IJsSchema, data: any) => any) => any
-  jsonType?: string
+  validate?: (schema: IJsSchema, data: any) => [boolean, string]
+  serialize?: (schema: IJsSchema, data: any) => any
+  deserialize?: (schema: IJsSchema, data: any) => any
+  json?: IJsonOptions
   desc?: string
 }
 
@@ -35,7 +29,7 @@ export function Schema(options: ISchemaOptions = {}) {
   return (constructor: Constructor<any>) => {
     const jsSchema: IJsSchema = {
       type: 'object',
-      modelConstructor: constructor
+      classConstructor: constructor
     }
     const propMetadataMap: Map<string, PropMetadata> =
       Reflect.getMetadata(MetadataKey.PROPS, constructor.prototype) || Map()
@@ -55,40 +49,20 @@ export function Schema(options: ISchemaOptions = {}) {
     if (!_.isEmpty(requiredProps)) {
       jsSchema.required = requiredProps
     }
+    if (options.validate) {
+      jsSchema.validate = options.validate
+    }
+    if (options.serialize) {
+      jsSchema.serialize = options.serialize
+    }
+    if (options.deserialize) {
+      jsSchema.deserialize = options.deserialize
+    }
+    if (options.json) {
+      jsSchema.json = options.json
+    }
 
     const metadata = new SchemaMetadata(options.id || constructor.name, jsSchema, options.desc)
-    const jsonProcessor: IJsonOptions = {} as any
-    const type = metadata.schema.type
-    jsonProcessor.type = options.jsonType || type
-    const validate = options.validate
-    if (validate) {
-      jsonProcessor.validate = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return validate(schema, data, defaultProcessor ? defaultProcessor.validate : undefined)
-      }
-    } else if (!jsonProcessor.validate) {
-      jsonProcessor.validate = getJsonValidate(metadata.schema)
-    }
-    const serialize = options.serialize
-    if (serialize) {
-      jsonProcessor.serialize = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return serialize(schema, data, defaultProcessor ? defaultProcessor.serialize : undefined)
-      }
-    } else if (!jsonProcessor.serialize) {
-      jsonProcessor.serialize = getJsonSerialize(metadata.schema)
-    }
-    const deserialize = options.deserialize
-    if (deserialize) {
-      jsonProcessor.deserialize = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return deserialize(schema, data, defaultProcessor ? defaultProcessor.deserialize : undefined)
-      }
-    } else if (!jsonProcessor.deserialize) {
-      jsonProcessor.deserialize = getJsonDeserialize(metadata.schema)
-    }
-
-    metadata.schema.json = jsonProcessor
     Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
   }
 }

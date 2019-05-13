@@ -1,9 +1,8 @@
 import { Map } from 'immutable'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
-import { normalizeSimpleSchema, getJsonValidate, getJsonSerialize, getJsonDeserialize } from '../lib/utils'
+import { normalizeSimpleSchema } from '../lib/utils'
 import { IJsonOptions, IJsSchema } from '../types'
-import jsonDataType from '../lib/JsonDataType'
 
 export interface IPropOptions {
   type?: string | { [prop: string]: any }
@@ -16,17 +15,10 @@ export interface IPropOptions {
   strict?: boolean
   private?: boolean
   default?: any
-  json?: {
-    name?: string
-    type?: string
-    validate?: (
-      schema: any,
-      data: any,
-      defaultValidate?: (schema: any, data: any) => [boolean, string]
-    ) => [boolean, string]
-    serialize?: (schema: any, data: any, defaultSerialize?: (schema: any, data: any) => any) => any
-    deserialize?: (schema: any, data: any, defaultDeserialize?: (schema: any, data: any) => any) => any
-  }
+  validate?: (schema: IJsSchema, data: any) => [boolean, string]
+  serialize?: (schema: IJsSchema, data: any) => any
+  deserialize?: (schema: IJsSchema, data: any) => any
+  json?: IJsonOptions
 }
 
 export class PropMetadata {
@@ -58,42 +50,21 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   metadata.enum = options.enum
   metadata.const = options.const
   metadata.private = options.private || false
-  if (metadata.private) {
-    metadata.schema.private = true
+  if (options.validate) {
+    metadata.schema.validate = options.validate
+  }
+  if (options.serialize) {
+    metadata.schema.serialize = options.serialize
+  }
+  if (options.deserialize) {
+    metadata.schema.deserialize = options.deserialize
   }
   if (options.json) {
-    const json = options.json
-    const jsonOptions: IJsonOptions = {} as any
-    jsonOptions.name = json.name
-    jsonOptions.type = json.type
-    const validate = json.validate
-    if (validate) {
-      jsonOptions.validate = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return validate(schema, data, defaultProcessor ? defaultProcessor.validate : undefined)
-      }
-    } else if (!jsonOptions.validate) {
-      jsonOptions.validate = getJsonValidate(metadata.schema)
+    if (metadata.schema.json) {
+      Object.assign(metadata.schema.json, options.json)
+    } else {
+      metadata.schema.json = options.json
     }
-    const serialize = json.serialize
-    if (serialize) {
-      jsonOptions.serialize = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return serialize(schema, data, defaultProcessor ? defaultProcessor.serialize : undefined)
-      }
-    } else if (!jsonOptions.serialize) {
-      jsonOptions.serialize = getJsonSerialize(metadata.schema)
-    }
-    const deserialize = json.deserialize
-    if (deserialize) {
-      jsonOptions.deserialize = (schema: IJsSchema, data: any) => {
-        const defaultProcessor = jsonDataType.get(schema.type)
-        return deserialize(schema, data, defaultProcessor ? defaultProcessor.deserialize : undefined)
-      }
-    } else if (!jsonOptions.deserialize) {
-      jsonOptions.deserialize = getJsonDeserialize(metadata.schema)
-    }
-    metadata.schema.json = jsonOptions
   }
   return metadata
 }
