@@ -1,10 +1,9 @@
-import { IJsSchema, ITypeOptions } from '../types'
 import { Map } from 'immutable'
 import _ from 'lodash'
-import { getValidate, getSerialize, getDeserialize } from './utils'
+import { IJsSchema, ITypeOptions } from '../types'
+import { getDeserialize, getSerialize, getValidate } from './utils'
 
 export class DataType {
-  private static _types = Map<string, ITypeOptions>()
   public static add(type: string, options: ITypeOptions) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
@@ -14,8 +13,10 @@ export class DataType {
   public static get(type: string) {
     return this._types.get(type)
   }
+  private static _types = Map<string, ITypeOptions>()
 }
 
+// tslint:disable-next-line: max-classes-per-file
 class StringTypeOptions implements ITypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'string') {
@@ -40,6 +41,7 @@ class StringTypeOptions implements ITypeOptions {
   }
 }
 
+// tslint:disable-next-line: max-classes-per-file
 class BooleanTypeOptions implements ITypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'boolean') {
@@ -63,6 +65,7 @@ class BooleanTypeOptions implements ITypeOptions {
     }
   }
 }
+// tslint:disable-next-line: max-classes-per-file
 class NumberTypeOptions implements ITypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'number') {
@@ -71,14 +74,14 @@ class NumberTypeOptions implements ITypeOptions {
       return [false, `invalid number: ${val}`]
     }
   }
-  serialize(_1: IJsSchema, val: any) {
+  public serialize(_1: IJsSchema, val: any) {
     if (val === undefined) {
       return undefined
     } else {
       return Number.parseFloat(val)
     }
   }
-  deserialize(schema: IJsSchema, val?: number) {
+  public deserialize(schema: IJsSchema, val?: number) {
     if (val === undefined) {
       return schema.default
     } else {
@@ -86,6 +89,7 @@ class NumberTypeOptions implements ITypeOptions {
     }
   }
 }
+// tslint:disable-next-line: max-classes-per-file
 class ArrayTypeOptions implements ITypeOptions {
   public type: string = 'array'
   public validate(schema: IJsSchema, val: any): [boolean, string] {
@@ -107,7 +111,7 @@ class ArrayTypeOptions implements ITypeOptions {
       return [false, 'Invalid array']
     }
   }
-  serialize(schema: IJsSchema, val: any) {
+  public serialize(schema: IJsSchema, val: any) {
     if (val === undefined) {
       return undefined
     } else {
@@ -128,7 +132,7 @@ class ArrayTypeOptions implements ITypeOptions {
       }
     }
   }
-  deserialize(schema: IJsSchema, val?: any[]) {
+  public deserialize(schema: IJsSchema, val?: any[]) {
     if (val === undefined) {
       return schema.default
     } else {
@@ -149,9 +153,10 @@ class ArrayTypeOptions implements ITypeOptions {
   }
 }
 
+// tslint:disable-next-line: max-classes-per-file
 class ObjectTypeOptions implements ITypeOptions {
   public type: string = 'object'
-  public validate(schema: IJsSchema, data: any, dataType?: string): [boolean, string] {
+  public validate(schema: IJsSchema, data: any): [boolean, string] {
     if (typeof data !== 'object') {
       return [false, 'Invalid object']
     } else {
@@ -168,8 +173,8 @@ class ObjectTypeOptions implements ITypeOptions {
       const propNames = Object.getOwnPropertyNames(properties)
       for (const prop of propNames) {
         const propSchema = properties[prop]
-        const validate = getValidate(schema, dataType)
-        let value = Reflect.get(data, prop)
+        const validate = getValidate(schema)
+        const value = Reflect.get(data, prop)
         if (validate) {
           const [valid, msg] = validate(propSchema, value)
           if (!valid) {
@@ -180,7 +185,7 @@ class ObjectTypeOptions implements ITypeOptions {
       return [true, '']
     }
   }
-  public serialize(schema: IJsSchema, data?: object, dataType?: string) {
+  public serialize(schema: IJsSchema, data?: object) {
     if (data === undefined) {
       return undefined
     } else {
@@ -193,7 +198,7 @@ class ObjectTypeOptions implements ITypeOptions {
           if (propSchema.json && propSchema.json.disabled) {
             continue
           }
-          const serialize = getSerialize(propSchema, dataType)
+          const serialize = getSerialize(propSchema)
           let value = Reflect.get(data, prop)
           if (serialize) {
             value = serialize(propSchema, value)
@@ -206,7 +211,7 @@ class ObjectTypeOptions implements ITypeOptions {
       return json
     }
   }
-  deserialize(schema: IJsSchema, data?: object, dataType?: string) {
+  public deserialize(schema: IJsSchema, data?: object) {
     if (data === undefined) {
       return schema.default
     } else {
@@ -219,7 +224,7 @@ class ObjectTypeOptions implements ITypeOptions {
           if (propSchema.json && propSchema.json.disabled) {
             continue
           }
-          const deserialize = getDeserialize(propSchema, dataType)
+          const deserialize = getDeserialize(propSchema)
           let value = Reflect.get(data, prop)
           if (deserialize) {
             value = deserialize(propSchema, value)

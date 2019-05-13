@@ -1,46 +1,33 @@
+import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
-import _ from 'lodash'
 import { Constructor, IJsSchema } from '../types'
 import { DataType } from './DataType'
 
 export const getTypeOption = (
   prop: string,
-  schema: IJsSchema,
-  dataType?: string
+  schema: IJsSchema
 ): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
-  const propPath = dataType ? [dataType, prop].join('.') : prop
-  let property = _.get(schema, propPath)
+  let property = _.get(schema, prop)
   if (!property) {
     const type = schema.type
     const typeOptions = DataType.get(type)
     if (typeOptions) {
-      property = _.get(typeOptions, propPath, typeOptions.validate)
-    }
-    if (property) {
-      return property
+      property = _.get(typeOptions, prop)
     }
   }
+  return property
 }
 
-export const getValidate = (
-  schema: IJsSchema,
-  dataType?: string
-): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
-  return getTypeOption('validate', schema, dataType)
+export const getValidate = (schema: IJsSchema): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
+  return getTypeOption('validate', schema)
 }
-export const getSerialize = (
-  schema: IJsSchema,
-  dataType?: string
-): ((schema: IJsSchema, data: any) => any) | undefined => {
-  return getTypeOption('serialize', schema, dataType)
+export const getSerialize = (schema: IJsSchema): ((schema: IJsSchema, data: any) => any) | undefined => {
+  return getTypeOption('serialize', schema)
 }
 
-export const getDeserialize = (
-  schema: IJsSchema,
-  dataType?: string
-): ((schema: IJsSchema, data: any) => any) | undefined => {
-  return getTypeOption('deserialize', schema, dataType)
+export const getDeserialize = (schema: IJsSchema): ((schema: IJsSchema, data: any) => any) | undefined => {
+  return getTypeOption('deserialize', schema)
 }
 
 export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) => {
@@ -48,44 +35,40 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
   Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
 }
 
-export const validate = (schema: IJsSchema, data: any, dataType?: string): [boolean, string] => {
-  const validator = getValidate(schema, dataType)
-  if (validator) {
-    return validator(schema, data)
+export const validate = (schema: IJsSchema, data: any): [boolean, string] => {
+  const validateFunc = getValidate(schema)
+  if (validateFunc) {
+    return validateFunc(schema, data)
   } else {
     return [true, '']
   }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, options?: { dataType?: string; validated: boolean }) => {
-  const validated = (options && options.validated) || false
-  const dataType = options && options.dataType
+export const deserialize = (schema: IJsSchema, json: any, validated: boolean = false) => {
   if (!validated) {
-    const [valid, msg] = validate(schema, json, dataType)
+    const [valid, msg] = validate(schema, json)
     if (!valid) {
       throw new Error(msg)
     }
   }
-  const deserialize = getDeserialize(schema, dataType)
-  if (deserialize) {
-    return deserialize(schema, json)
+  const deserializeFunc = getDeserialize(schema)
+  if (deserializeFunc) {
+    return deserializeFunc(schema, json)
   } else {
     return json
   }
 }
 
-export const serialize = (schema: IJsSchema, data: any, options?: { dataType?: string; validated: boolean }) => {
-  const validated = (options && options.validated) || false
-  const dataType = options && options.dataType
+export const serialize = (schema: IJsSchema, data: any, validated: boolean = false) => {
   if (!validated) {
-    const [valid, msg] = validate(schema, data, dataType)
+    const [valid, msg] = validate(schema, data)
     if (!valid) {
       throw new Error(msg)
     }
   }
-  const serialize = getSerialize(schema, dataType)
-  if (serialize) {
-    return serialize(schema, data)
+  const serializeFunc = getSerialize(schema)
+  if (serializeFunc) {
+    return serializeFunc(schema, data)
   } else {
     return data
   }
