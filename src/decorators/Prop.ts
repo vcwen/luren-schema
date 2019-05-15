@@ -2,7 +2,7 @@ import { Map } from 'immutable'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
 import { normalizeSimpleSchema } from '../lib/utils'
-import { IJsonOptions, IJsSchema } from '../types'
+import { IJsSchema } from '../types'
 
 export interface IPropOptions {
   type?: string | { [prop: string]: any }
@@ -18,7 +18,6 @@ export interface IPropOptions {
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
   serialize?: (schema: IJsSchema, data: any) => any
   deserialize?: (schema: IJsSchema, data: any) => any
-  json?: IJsonOptions
 }
 
 export class PropMetadata {
@@ -59,12 +58,8 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   if (options.deserialize) {
     metadata.schema.deserialize = options.deserialize
   }
-  if (options.json) {
-    if (metadata.schema.json) {
-      Object.assign(metadata.schema.json, options.json)
-    } else {
-      metadata.schema.json = options.json
-    }
+  if (options.private) {
+    metadata.schema.private = options.private
   }
   return metadata
 }

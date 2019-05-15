@@ -2,7 +2,7 @@ import { Map } from 'immutable'
 import _ from 'lodash'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
-import { Constructor, IJsSchema, IJsonOptions } from '../types'
+import { Constructor, IJsSchema } from '../types'
 import { PropMetadata } from './Prop'
 
 export interface ISchemaOptions {
@@ -10,7 +10,7 @@ export interface ISchemaOptions {
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
   serialize?: (schema: IJsSchema, data: any) => any
   deserialize?: (schema: IJsSchema, data: any) => any
-  json?: IJsonOptions
+  private?: boolean
   desc?: string
 }
 
@@ -58,8 +58,8 @@ export function Schema(options: ISchemaOptions = {}) {
     if (options.deserialize) {
       jsSchema.deserialize = options.deserialize
     }
-    if (options.json) {
-      jsSchema.json = options.json
+    if (options.private) {
+      jsSchema.private = options.private
     }
 
     const metadata = new SchemaMetadata(options.id || constructor.name, jsSchema, options.desc)

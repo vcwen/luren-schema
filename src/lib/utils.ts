@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
+import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
 import { Constructor, IJsSchema } from '../types'
 import { DataType } from './DataType'
@@ -44,18 +45,15 @@ export const validate = (schema: IJsSchema, data: any): [boolean, string] => {
   }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, validated: boolean = false) => {
-  if (!validated) {
-    const [valid, msg] = validate(schema, json)
-    if (!valid) {
-      throw new Error(msg)
-    }
-  }
+export const deserialize = (schema: IJsSchema, json: any) => {
+  let data = json
   const deserializeFunc = getDeserialize(schema)
   if (deserializeFunc) {
-    return deserializeFunc(schema, json)
-  } else {
-    return json
+    data = deserializeFunc(schema, json)
+  }
+  const [valid, msg] = validate(schema, data)
+  if (!valid) {
+    throw new Error(msg)
   }
 }
 
@@ -164,31 +162,40 @@ export const normalizeSimpleSchema = (schema: any): any => {
 }
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
-  const jsonSchema = _.cloneDeep(schema) as any
-  if (schema.json) {
-    if (schema.json.type) {
-      jsonSchema.type = jsonSchema.json.type
-    }
-    if (schema.json.additionalProps) {
-      Object.assign(jsonSchema, schema.json.additionalProps)
-    }
-    Reflect.deleteProperty(jsonSchema, 'json')
-  }
-  Reflect.deleteProperty(jsonSchema, 'classConstructor')
-  if (jsonSchema.items) {
-    jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)
-  }
-  const properties = schema.properties
-  if (properties) {
-    jsonSchema.properties = {}
-    const props = Object.getOwnPropertyNames(properties)
-    for (const prop of props) {
-      const propSchema = properties[prop]
-      if (propSchema.json && propSchema.json.disabled) {
-        continue
+  let jsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
+  if (jsonSchema) {
+    return jsonSchema
+  } else {
+    jsonSchema = _.cloneDeep(schema) as any
+    const typeOptions = DataType.get(schema.type)
+    if (typeOptions && typeOptions.json) {
+      if (typeOptions.json.type) {
+        jsonSchema.type = typeOptions.json.type
       }
-      jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema)
+      if (typeOptions.json.additionalProps) {
+        Object.assign(jsonSchema, typeOptions.json.additionalProps)
+      }
     }
+    if (jsonSchema.classConstructor) {
+      Reflect.deleteProperty(jsonSchema, 'classConstructor')
+    }
+
+    if (jsonSchema.items) {
+      jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)
+    }
+    const properties = schema.properties
+    if (properties) {
+      jsonSchema.properties = {}
+      const props = Object.getOwnPropertyNames(properties)
+      for (const prop of props) {
+        const propSchema = properties[prop]
+        if (propSchema.private) {
+          continue
+        }
+        jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema)
+      }
+    }
+    Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
+    return jsonSchema
   }
-  return jsonSchema
 }

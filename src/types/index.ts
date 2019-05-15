@@ -1,13 +1,11 @@
 export type Constructor<T> = new (...args: any[]) => T
 
 export interface IJsonOptions {
-  disabled?: boolean
   type?: string
   additionalProps?: { [key: string]: any }
 }
-
 export interface IJsSchema {
-  json?: IJsonOptions
+  private?: boolean
   virtual?: boolean
   type: string
   classConstructor?: Constructor<any>

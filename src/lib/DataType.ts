@@ -25,18 +25,14 @@ class StringTypeOptions implements ITypeOptions {
       return [false, `Invalid string:${val}`]
     }
   }
-  public serialize(_1: IJsSchema, val: any) {
+  public serialize(_1: IJsSchema, val?: string) {
+    return val
+  }
+  public deserialize(schema: IJsSchema, val?: any) {
     if (val === undefined) {
-      return undefined
+      return schema.default
     } else {
       return typeof val === 'string' ? val : JSON.stringify(val)
-    }
-  }
-  public deserialize(schema: IJsSchema, val?: string) {
-    if (val === undefined) {
-      return schema.defaultVal
-    } else {
-      return val
     }
   }
 }
@@ -50,18 +46,14 @@ class BooleanTypeOptions implements ITypeOptions {
       return [false, `Invalid boolean: ${val}`]
     }
   }
-  public serialize(_1: IJsSchema, val: any) {
-    if (val === undefined) {
-      return undefined
-    } else {
-      return val ? true : false
-    }
+  public serialize(_1: IJsSchema, val?: boolean) {
+    return val
   }
-  public deserialize(schema: IJsSchema, val?: boolean) {
+  public deserialize(schema: IJsSchema, val?: any) {
     if (val === undefined) {
       return schema.default
     } else {
-      return val
+      return typeof val === 'boolean' ? val : val ? true : false
     }
   }
 }
@@ -74,18 +66,14 @@ class NumberTypeOptions implements ITypeOptions {
       return [false, `invalid number: ${val}`]
     }
   }
-  public serialize(_1: IJsSchema, val: any) {
-    if (val === undefined) {
-      return undefined
-    } else {
-      return Number.parseFloat(val)
-    }
+  public serialize(_1: IJsSchema, val?: number) {
+    return val
   }
-  public deserialize(schema: IJsSchema, val?: number) {
+  public deserialize(schema: IJsSchema, val?: any) {
     if (val === undefined) {
       return schema.default
     } else {
-      return val
+      return typeof val === 'number' ? val : Number.parseFloat(val)
     }
   }
 }
@@ -159,31 +147,30 @@ class ObjectTypeOptions implements ITypeOptions {
   public validate(schema: IJsSchema, data: any): [boolean, string] {
     if (typeof data !== 'object') {
       return [false, 'Invalid object']
-    } else {
-      const properties = schema.properties || {}
-      const requiredProps = schema.required
-      if (requiredProps) {
-        for (const prop of requiredProps) {
-          if (Reflect.get(data, prop) === undefined) {
-            return [false, `${prop} is required`]
-          }
-        }
-      }
-
-      const propNames = Object.getOwnPropertyNames(properties)
-      for (const prop of propNames) {
-        const propSchema = properties[prop]
-        const validate = getValidate(propSchema)
-        const value = Reflect.get(data, prop)
-        if (validate) {
-          const [valid, msg] = validate(propSchema, value)
-          if (!valid) {
-            return [valid, msg]
-          }
-        }
-      }
-      return [true, '']
     }
+    const properties = schema.properties || {}
+    const requiredProps = schema.required
+    if (requiredProps) {
+      for (const prop of requiredProps) {
+        if (Reflect.get(data, prop) === undefined) {
+          return [false, `${prop} is required`]
+        }
+      }
+    }
+
+    const propNames = Object.getOwnPropertyNames(properties)
+    for (const prop of propNames) {
+      const propSchema = properties[prop]
+      const validate = getValidate(propSchema)
+      const value = Reflect.get(data, prop)
+      if (validate) {
+        const [valid, msg] = validate(propSchema, value)
+        if (!valid) {
+          return [valid, msg]
+        }
+      }
+    }
+    return [true, '']
   }
   public serialize(schema: IJsSchema, data?: object) {
     if (data === undefined) {
@@ -195,7 +182,7 @@ class ObjectTypeOptions implements ITypeOptions {
         const propNames = Object.getOwnPropertyNames(properties)
         for (const prop of propNames) {
           const propSchema = properties[prop]
-          if (propSchema.json && propSchema.json.disabled) {
+          if (propSchema.private) {
             continue
           }
           const serialize = getSerialize(propSchema)
@@ -221,7 +208,7 @@ class ObjectTypeOptions implements ITypeOptions {
         const propNames = Object.getOwnPropertyNames(properties)
         for (const prop of propNames) {
           const propSchema = properties[prop]
-          if (propSchema.json && propSchema.json.disabled) {
+          if (propSchema.private) {
             continue
           }
           const deserialize = getDeserialize(propSchema)
