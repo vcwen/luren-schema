@@ -1,4 +1,4 @@
-.PHONY: build compile test clean 
+.PHONY: build compile test clean
 default: build
 .ONESHELL:
 
@@ -7,10 +7,10 @@ UNAME_S := $(shell uname -s)
 
 node_modules: yarn.lock
 	if [ $${NODE_ENV} == "production" ]
-	then 
-		yarn install --production              
-	else                                      
-		yarn install                           
+	then
+		yarn install --production
+	else
+		yarn install
 	fi
 compile: node_modules clean
 	npx tsc  -p tsconfig.build.json
