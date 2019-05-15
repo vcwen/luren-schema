@@ -55,6 +55,7 @@ export const deserialize = (schema: IJsSchema, json: any) => {
   if (!valid) {
     throw new Error(msg)
   }
+  return data
 }
 
 export const serialize = (schema: IJsSchema, data: any, validated: boolean = false) => {
