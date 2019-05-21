@@ -1,4 +1,4 @@
-export { IJsSchema, ITypeOptions } from './types'
+export { IJsSchema, ITypeOptions, IDataSchema, IDataTypeOptions, IJsTypeOptions, IJsonOptions } from './types'
 export { IPropOptions, Prop, PropMetadata } from './decorators/Prop'
 export { ISchemaOptions, Schema, SchemaMetadata } from './decorators/Schema'
 export {
@@ -7,7 +7,12 @@ export {
   serialize,
   deserialize,
   normalizeSimpleSchema,
-  jsSchemaToJsonSchema
+  jsSchemaToJsonSchema,
+  convertSimpleSchemaToJsSchema,
+  getDeserialize,
+  getSerialize,
+  getTypeOption,
+  getValidate
 } from './lib/utils'
-export { DataType } from './lib/DataType'
+export { DataTypes, JsDataTypes, jsDataTypes } from './lib/DataType'
 export { MetadataKey } from './constants/MetadataKey'

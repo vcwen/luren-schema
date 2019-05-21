@@ -20,9 +20,18 @@ export interface IJsSchema {
   [prop: string]: any
 }
 
+// tslint:disable-next-line: no-empty-interface
+export interface IDataSchema extends IJsSchema {}
+
 export interface ITypeOptions {
-  json?: IJsonOptions
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
   serialize?: (schema: IJsSchema, data: any) => any
   deserialize?: (schema: IJsSchema, data: any) => any
 }
+
+export interface IJsTypeOptions extends ITypeOptions {
+  json?: IJsonOptions
+}
+
+// tslint:disable-next-line: no-empty-interface
+export interface IDataTypeOptions extends ITypeOptions {}

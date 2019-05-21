@@ -1,23 +1,28 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
-import { IJsSchema, ITypeOptions } from '../types'
+import { IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
-export class DataType {
-  public static add(type: string, options: ITypeOptions) {
+export abstract class DataTypes<T extends ITypeOptions> {
+  private _types = Map<string, T>()
+  public add(type: string, options: T) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
     }
     this._types = this._types.set(type, options)
   }
-  public static get(type: string) {
+  public get(type: string) {
     return this._types.get(type)
   }
-  private static _types = Map<string, ITypeOptions>()
 }
 
 // tslint:disable-next-line: max-classes-per-file
-class StringTypeOptions implements ITypeOptions {
+export class JsDataTypes extends DataTypes<IJsTypeOptions> {}
+
+export const jsDataTypes = new JsDataTypes()
+
+// tslint:disable-next-line: max-classes-per-file
+class StringTypeOptions implements IJsTypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'string') {
       return [true, '']
@@ -38,7 +43,7 @@ class StringTypeOptions implements ITypeOptions {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-class BooleanTypeOptions implements ITypeOptions {
+class BooleanTypeOptions implements IJsTypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'boolean') {
       return [true, '']
@@ -58,7 +63,7 @@ class BooleanTypeOptions implements ITypeOptions {
   }
 }
 // tslint:disable-next-line: max-classes-per-file
-class NumberTypeOptions implements ITypeOptions {
+class NumberTypeOptions implements IJsTypeOptions {
   public validate(_1: IJsSchema, val: any): [boolean, string] {
     if (typeof val === 'number') {
       return [true, '']
@@ -78,7 +83,7 @@ class NumberTypeOptions implements ITypeOptions {
   }
 }
 // tslint:disable-next-line: max-classes-per-file
-class ArrayTypeOptions implements ITypeOptions {
+class ArrayTypeOptions implements IJsTypeOptions {
   public type: string = 'array'
   public validate(schema: IJsSchema, val: any): [boolean, string] {
     if (Array.isArray(val)) {
@@ -142,7 +147,7 @@ class ArrayTypeOptions implements ITypeOptions {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-class ObjectTypeOptions implements ITypeOptions {
+class ObjectTypeOptions implements IJsTypeOptions {
   public type: string = 'object'
   public validate(schema: IJsSchema, data: any): [boolean, string] {
     if (typeof data !== 'object') {
@@ -202,9 +207,9 @@ class ObjectTypeOptions implements ITypeOptions {
     if (data === undefined) {
       return schema.default
     } else {
-      const obj = schema.classConstructor ? new schema.classConstructor() : {}
       const properties = schema.properties
-      if (properties) {
+      if (properties && !_.isEmpty(properties)) {
+        const obj = schema.classConstructor ? new schema.classConstructor() : {}
         const propNames = Object.getOwnPropertyNames(properties)
         for (const prop of propNames) {
           const propSchema = properties[prop]
@@ -218,16 +223,16 @@ class ObjectTypeOptions implements ITypeOptions {
           }
           Reflect.set(obj, prop, value)
         }
+        return obj
       } else {
-        Object.assign(obj, data)
+        return data
       }
-      return obj
     }
   }
 }
 
-DataType.add('string', new StringTypeOptions())
-DataType.add('boolean', new BooleanTypeOptions())
-DataType.add('number', new NumberTypeOptions())
-DataType.add('array', new ArrayTypeOptions())
-DataType.add('object', new ObjectTypeOptions())
+jsDataTypes.add('string', new StringTypeOptions())
+jsDataTypes.add('boolean', new BooleanTypeOptions())
+jsDataTypes.add('number', new NumberTypeOptions())
+jsDataTypes.add('array', new ArrayTypeOptions())
+jsDataTypes.add('object', new ObjectTypeOptions())

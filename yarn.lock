@@ -333,10 +333,10 @@
   dependencies:
     "@types/jest-diff" "*"
 
-"@types/lodash@^4.14.123":
-  version "4.14.123"
-  resolved "https://registry.npm.taobao.org/@types/lodash/download/@types/lodash-4.14.123.tgz#39be5d211478c8dd3bdae98ee75bb7efe4abfe4d"
-  integrity sha1-Ob5dIRR4yN072umO51u37+Sr/k0=
+"@types/lodash@^4.14.130":
+  version "4.14.130"
+  resolved "https://registry.npm.taobao.org/@types/lodash/download/@types/lodash-4.14.130.tgz#04b3a690d5f4fc34579963c99adae067b8c8eb5a"
+  integrity sha1-BLOmkNX0/DRXmWPJmtrgZ7jI61o=
 
 "@types/node@^11.13.8":
   version "11.13.8"
