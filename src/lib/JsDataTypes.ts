@@ -1,25 +1,9 @@
-import { Map } from 'immutable'
 import _ from 'lodash'
-import { IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
+import { IJsSchema, IJsTypeOptions } from '../types'
+import { DataTypes } from './DataTypes'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
-export abstract class DataTypes<T extends ITypeOptions> {
-  private _types = Map<string, T>()
-  public add(type: string, options: T) {
-    if (this._types.has(type)) {
-      throw new Error(`type:${type} already exists`)
-    }
-    this._types = this._types.set(type, options)
-  }
-  public get(type: string) {
-    return this._types.get(type)
-  }
-}
-
-// tslint:disable-next-line: max-classes-per-file
-export class JsDataTypes extends DataTypes<IJsTypeOptions> {}
-
-export const jsDataTypes = new JsDataTypes()
+export const JsDataTypes = new DataTypes<IJsTypeOptions>()
 
 // tslint:disable-next-line: max-classes-per-file
 class StringTypeOptions implements IJsTypeOptions {
@@ -231,8 +215,8 @@ class ObjectTypeOptions implements IJsTypeOptions {
   }
 }
 
-jsDataTypes.add('string', new StringTypeOptions())
-jsDataTypes.add('boolean', new BooleanTypeOptions())
-jsDataTypes.add('number', new NumberTypeOptions())
-jsDataTypes.add('array', new ArrayTypeOptions())
-jsDataTypes.add('object', new ObjectTypeOptions())
+JsDataTypes.add('string', new StringTypeOptions())
+JsDataTypes.add('boolean', new BooleanTypeOptions())
+JsDataTypes.add('number', new NumberTypeOptions())
+JsDataTypes.add('array', new ArrayTypeOptions())
+JsDataTypes.add('object', new ObjectTypeOptions())

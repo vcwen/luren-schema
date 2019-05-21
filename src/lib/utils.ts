@@ -3,7 +3,8 @@ import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
 import { Constructor, IJsSchema, ITypeOptions } from '../types'
-import { DataTypes, jsDataTypes } from './DataType'
+import { DataTypes } from './DataTypes'
+import { JsDataTypes } from './JsDataTypes'
 
 export const getTypeOption = <T>(
   prop: string,
@@ -23,20 +24,20 @@ export const getTypeOption = <T>(
 
 export const getValidate = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = jsDataTypes
+  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
 ): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
   return getTypeOption('validate', schema, dataTypes)
 }
 export const getSerialize = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = jsDataTypes
+  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
 ): ((schema: IJsSchema, data: any) => any) | undefined => {
   return getTypeOption('serialize', schema, dataTypes)
 }
 
 export const getDeserialize = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = jsDataTypes
+  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
 ): ((schema: IJsSchema, data: any) => any) | undefined => {
   return getTypeOption('deserialize', schema, dataTypes)
 }
@@ -49,7 +50,7 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
 export const validate = (
   schema: IJsSchema,
   data: any,
-  dataTypes: DataTypes<ITypeOptions> = jsDataTypes
+  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
 ): [boolean, string] => {
   const validateFunc = getValidate(schema, dataTypes)
   if (validateFunc) {
@@ -59,7 +60,7 @@ export const validate = (
   }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<ITypeOptions> = jsDataTypes) => {
+export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<ITypeOptions> = JsDataTypes) => {
   let data = json
   const deserializeFunc = getDeserialize(schema, dataTypes)
   if (deserializeFunc) {
@@ -72,7 +73,7 @@ export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<I
   return data
 }
 
-export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITypeOptions> = jsDataTypes) => {
+export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITypeOptions> = JsDataTypes) => {
   const [valid, msg] = validate(schema, data)
   if (!valid) {
     throw new Error(msg)
@@ -181,7 +182,7 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
     return jsonSchema
   } else {
     jsonSchema = _.cloneDeep(schema) as any
-    const typeOptions = jsDataTypes.get(schema.type)
+    const typeOptions = JsDataTypes.get(schema.type)
     if (typeOptions && typeOptions.json) {
       if (typeOptions.json.type) {
         jsonSchema.type = typeOptions.json.type

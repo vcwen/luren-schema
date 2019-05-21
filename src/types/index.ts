@@ -17,11 +17,12 @@ export interface IJsSchema {
   items?: IJsSchema
   required?: string[]
   description?: string
+  default?: any
   [prop: string]: any
 }
 
 // tslint:disable-next-line: no-empty-interface
-export interface IDataSchema extends IJsSchema {}
+export interface IPersistSchema extends IJsSchema {}
 
 export interface ITypeOptions {
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
@@ -34,4 +35,4 @@ export interface IJsTypeOptions extends ITypeOptions {
 }
 
 // tslint:disable-next-line: no-empty-interface
-export interface IDataTypeOptions extends ITypeOptions {}
+export interface IPersistTypeOptions extends ITypeOptions {}
