@@ -1,6 +1,6 @@
 {
   "name": "luren-schema",
-  "version": "0.0.7-5",
+  "version": "0.0.8",
   "description": "schema for luren",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
