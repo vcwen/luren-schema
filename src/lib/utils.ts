@@ -2,9 +2,8 @@ import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/schema'
-import { Constructor, IJsSchema, ITypeOptions } from '../types'
+import { Constructor, IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
-import { JsDataTypes } from './JsDataTypes'
 
 export const getTypeOption = <T>(
   prop: string,
@@ -24,20 +23,20 @@ export const getTypeOption = <T>(
 
 export const getValidate = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
+  dataTypes: DataTypes<ITypeOptions>
 ): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
   return getTypeOption('validate', schema, dataTypes)
 }
 export const getSerialize = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
+  dataTypes: DataTypes<ITypeOptions>
 ): ((schema: IJsSchema, data: any) => any) | undefined => {
   return getTypeOption('serialize', schema, dataTypes)
 }
 
 export const getDeserialize = (
   schema: IJsSchema,
-  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
+  dataTypes: DataTypes<ITypeOptions>
 ): ((schema: IJsSchema, data: any) => any) | undefined => {
   return getTypeOption('deserialize', schema, dataTypes)
 }
@@ -47,11 +46,7 @@ export const defineSchema = (constructor: Constructor<any>, schema: IJsSchema) =
   Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
 }
 
-export const validate = (
-  schema: IJsSchema,
-  data: any,
-  dataTypes: DataTypes<ITypeOptions> = JsDataTypes
-): [boolean, string] => {
+export const validate = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITypeOptions>): [boolean, string] => {
   const validateFunc = getValidate(schema, dataTypes)
   if (validateFunc) {
     return validateFunc(schema, data)
@@ -60,21 +55,21 @@ export const validate = (
   }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<ITypeOptions> = JsDataTypes) => {
+export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<ITypeOptions>) => {
   let data = json
   const deserializeFunc = getDeserialize(schema, dataTypes)
   if (deserializeFunc) {
     data = deserializeFunc(schema, json)
   }
-  const [valid, msg] = validate(schema, data)
+  const [valid, msg] = validate(schema, data, dataTypes)
   if (!valid) {
     throw new Error(msg)
   }
   return data
 }
 
-export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITypeOptions> = JsDataTypes) => {
-  const [valid, msg] = validate(schema, data)
+export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITypeOptions>) => {
+  const [valid, msg] = validate(schema, data, dataTypes)
   if (!valid) {
     throw new Error(msg)
   }
@@ -176,13 +171,13 @@ export const normalizeSimpleSchema = (schema: any): any => {
   return jsSchema
 }
 
-export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
+export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<IJsTypeOptions>) => {
   let jsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
   if (jsonSchema) {
     return jsonSchema
   } else {
     jsonSchema = _.cloneDeep(schema) as any
-    const typeOptions = JsDataTypes.get(schema.type)
+    const typeOptions = jsDataTypes.get(schema.type)
     if (typeOptions && typeOptions.json) {
       if (typeOptions.json.type) {
         jsonSchema.type = typeOptions.json.type
@@ -196,7 +191,7 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
     }
 
     if (jsonSchema.items) {
-      jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items)
+      jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items, jsDataTypes)
     }
     const properties = schema.properties
     if (properties) {
@@ -207,7 +202,7 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema) => {
         if (propSchema.private) {
           continue
         }
-        jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema)
+        jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema, jsDataTypes)
       }
     }
     Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
