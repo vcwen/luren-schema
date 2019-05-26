@@ -161,11 +161,32 @@ export const normalizeSimpleSchema = (schema: any): any => {
     if (schemaMetadata) {
       return _.cloneDeep(schemaMetadata.schema)
     } else {
-      throw new Error('Invalid schema.')
+      switch (schema) {
+        case String:
+          schema = 'string'
+          break
+        case Boolean:
+          schema = 'boolean'
+          break
+        case Number:
+          schema = 'number'
+          break
+        case Object:
+          schema = 'object'
+          break
+        case Date:
+          schema = 'date'
+          break
+        case Array:
+          schema = 'array'
+          break
+        default:
+          throw new Error(`Invalid schema:${schema}`)
+      }
     }
   }
   if (_.isEmpty(schema)) {
-    throw new Error('Invalid schema.')
+    throw new Error(`Invalid schema:${schema}`)
   }
   const [jsSchema] = convertSimpleSchemaToJsSchema(schema)
   return jsSchema
@@ -207,5 +228,15 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<I
     }
     Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
     return jsonSchema
+  }
+}
+
+export const mixinDecorators = (target: any, ...mixins: any[]) => {
+  for (const mixin of mixins) {
+    const keys = Reflect.getMetadataKeys(target)
+    for (const key of keys) {
+      const metadata = Reflect.getMetadata(key, mixin)
+      Reflect.defineMetadata(key, metadata, target)
+    }
   }
 }
