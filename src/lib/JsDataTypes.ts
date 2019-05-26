@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { IJsSchema, IJsTypeOptions } from '../types'
+import { IJsonOptions, IJsSchema, IJsTypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
@@ -67,6 +67,36 @@ export const createJsDataTypes = () => {
       }
     }
   }
+
+  // tslint:disable-next-line: max-classes-per-file
+  class DateTypeOptions implements IJsTypeOptions {
+    public json: IJsonOptions = {
+      type: 'string'
+    }
+    public validate(_1: IJsSchema, val: any): [boolean, string] {
+      if (val instanceof Date && !Number.isNaN(val.getTime())) {
+        return [true, '']
+      } else {
+        return [false, `invalid date value: ${val}`]
+      }
+    }
+    public serialize(_1: IJsSchema, val?: Date) {
+      return val
+    }
+    public deserialize(schema: IJsSchema, val?: any) {
+      if (val === undefined) {
+        return schema.default
+      } else {
+        const d = new Date(val)
+        if (!Number.isNaN(d.getTime())) {
+          return d
+        } else {
+          throw new Error(`Can not convert val:${val} to Date `)
+        }
+      }
+    }
+  }
+
   // tslint:disable-next-line: max-classes-per-file
   class ArrayTypeOptions implements IJsTypeOptions {
     public type: string = 'array'
@@ -219,6 +249,7 @@ export const createJsDataTypes = () => {
   jsDataTypes.add('string', new StringTypeOptions())
   jsDataTypes.add('boolean', new BooleanTypeOptions())
   jsDataTypes.add('number', new NumberTypeOptions())
+  jsDataTypes.add('date', new DateTypeOptions())
   jsDataTypes.add('array', new ArrayTypeOptions())
   jsDataTypes.add('object', new ObjectTypeOptions())
   return jsDataTypes
