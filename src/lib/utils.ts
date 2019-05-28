@@ -114,52 +114,26 @@ const normalizeProp = (decoratedProp: string): [string, boolean] => {
   }
 }
 
-export const convertSimpleSchemaToJsSchema = (schema: any): [any, boolean] => {
-  if (typeof schema === 'string') {
-    const [type, required] = normalizeType(schema)
-    const jsonSchema: any = { type }
-    return [jsonSchema, required]
-  } else if (Array.isArray(schema)) {
-    const propSchema: any = { type: 'array' }
-    if (schema[0]) {
-      const [itemSchema] = convertSimpleSchemaToJsSchema(schema[0])
-      propSchema.items = itemSchema
-    }
-    return [propSchema, true]
-  } else if (typeof schema === 'object') {
-    const jsSchema: IJsSchema = { type: 'object', properties: {} } as any
-    const requiredProps = [] as string[]
-    const props = Object.getOwnPropertyNames(schema)
-    for (const prop of props) {
-      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(schema[prop])
-      const [propName, required] = normalizeProp(prop)
-      if (jsSchema.properties) {
-        jsSchema.properties[propName] = propSchema
-      }
-      if (required && propRequired) {
-        requiredProps.push(propName)
-      }
-    }
-    if (!_.isEmpty(requiredProps)) {
-      jsSchema.required = requiredProps
-    }
-    return [jsSchema, true]
-  } else if (typeof schema === 'function') {
-    const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema)
-    if (!schemaMetadata) {
-      throw new Error(`Invalid schema:${schema.name}`)
-    }
-    return [schemaMetadata.schema, true]
-  } else {
-    throw new TypeError('Invalid schema:' + schema)
-  }
-}
-
-export const normalizeSimpleSchema = (schema: any): any => {
+export const convertSimpleSchemaToJsSchema = (
+  schema: any,
+  // tslint:disable-next-line: ban-types
+  classSchemaResolver: (constructor: Function) => IJsSchema | undefined
+): [IJsSchema, boolean] => {
   if (typeof schema === 'function') {
-    const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema.prototype)
-    if (schemaMetadata) {
-      return _.cloneDeep(schemaMetadata.schema)
+    let metadataSchema: IJsSchema | undefined
+    if (classSchemaResolver) {
+      const classSchema = classSchemaResolver(schema)
+      if (classSchema) {
+        return [classSchema, true]
+      }
+    } else {
+      const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema)
+      if (schemaMetadata) {
+        metadataSchema = schemaMetadata.schema
+      }
+    }
+    if (metadataSchema) {
+      return [metadataSchema, true]
     } else {
       switch (schema) {
         case String:
@@ -185,11 +159,47 @@ export const normalizeSimpleSchema = (schema: any): any => {
       }
     }
   }
-  if (_.isEmpty(schema)) {
-    throw new Error(`Invalid schema:${schema}`)
+  if (typeof schema === 'string') {
+    const [type, required] = normalizeType(schema)
+    const jsonSchema: any = { type }
+    return [jsonSchema, required]
+  } else if (Array.isArray(schema)) {
+    const propSchema: any = { type: 'array' }
+    if (schema[0]) {
+      const [itemSchema] = convertSimpleSchemaToJsSchema(schema[0], classSchemaResolver)
+      propSchema.items = itemSchema
+    }
+    return [propSchema, true]
+  } else if (typeof schema === 'object') {
+    const jsSchema: IJsSchema = { type: 'object', properties: {} } as any
+    const requiredProps = [] as string[]
+    const props = Object.getOwnPropertyNames(schema)
+    for (const prop of props) {
+      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(schema[prop], classSchemaResolver)
+      const [propName, required] = normalizeProp(prop)
+      if (jsSchema.properties) {
+        jsSchema.properties[propName] = propSchema
+      }
+      if (required && propRequired) {
+        requiredProps.push(propName)
+      }
+    }
+    if (!_.isEmpty(requiredProps)) {
+      jsSchema.required = requiredProps
+    }
+    return [jsSchema, true]
+  } else {
+    throw new TypeError('Invalid schema:' + schema)
   }
-  const [jsSchema] = convertSimpleSchemaToJsSchema(schema)
-  return jsSchema
+}
+
+export const normalizeSimpleSchema = (schema: any) => {
+  return convertSimpleSchemaToJsSchema(schema, (constructor) => {
+    const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, constructor)
+    if (schemaMetadata) {
+      return schemaMetadata.schema
+    }
+  })
 }
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<IJsTypeOptions>) => {
