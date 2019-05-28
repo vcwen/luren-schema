@@ -23,7 +23,7 @@ export interface IPropOptions {
 export class PropMetadata {
   public name: string
   public schema!: IJsSchema
-  public required: boolean = false
+  public required: boolean = true
   public format?: string
   public default?: any
   public strict: boolean = true
@@ -31,7 +31,7 @@ export class PropMetadata {
   public const?: any
   public desc?: string
   public private: boolean = false
-  constructor(name: string, required: boolean = false) {
+  constructor(name: string, required: boolean = true) {
     this.name = name
     this.required = required
   }
@@ -42,7 +42,11 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   if (options.schema) {
     metadata.schema = options.schema
   } else {
-    metadata.schema = normalizeSimpleSchema(options.type || 'string')
+    const [propSchema, propRequired] = normalizeSimpleSchema(options.type || 'string')
+    metadata.schema = propSchema
+    if (options.required === undefined) {
+      metadata.required = propRequired
+    }
   }
   metadata.strict = options.strict || false
   metadata.format = options.format
