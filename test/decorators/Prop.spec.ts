@@ -14,7 +14,7 @@ describe('Prop', () => {
     expect(props.get('name')).toEqual(
       expect.objectContaining({
         name: 'name',
-        required: false,
+        required: true,
         schema: expect.objectContaining({ type: 'string' }),
         strict: false,
         private: false

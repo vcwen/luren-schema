@@ -5,9 +5,9 @@ describe('Schema', () => {
   it('should build schema with props', () => {
     @Schema()
     class Test {
-      @Prop({ required: true })
+      @Prop()
       public name!: string
-      @Prop({ schema: { type: 'number' } })
+      @Prop({ type: 'number?' })
       public age?: number
     }
     const metadata = Reflect.getMetadata(MetadataKey.SCHEMA, Test.prototype)
