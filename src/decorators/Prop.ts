@@ -13,6 +13,7 @@ export interface IPropOptions {
   enum?: any[]
   const?: any
   strict?: boolean
+  virtual?: boolean
   private?: boolean
   default?: any
   validate?: (schema: IJsSchema, data: any) => [boolean, string]
@@ -31,6 +32,7 @@ export class PropMetadata {
   public const?: any
   public desc?: string
   public private: boolean = false
+  public virtual: boolean = false
   constructor(name: string, required: boolean = true) {
     this.name = name
     this.required = required
@@ -48,6 +50,7 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
       metadata.required = propRequired
     }
   }
+  metadata.virtual = options.virtual || false
   metadata.strict = options.strict || false
   metadata.format = options.format
   metadata.enum = options.enum
