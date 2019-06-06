@@ -36,3 +36,6 @@ export interface IJsTypeOptions extends ITypeOptions {
 
 // tslint:disable-next-line: no-empty-interface
 export interface IPersistTypeOptions extends ITypeOptions {}
+
+// tslint:disable-next-line: ban-types
+export type SimpleType = string | Function | { [prop: string]: SimpleType }

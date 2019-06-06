@@ -2,10 +2,10 @@ import { Map } from 'immutable'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
 import { normalizeSimpleSchema } from '../lib/utils'
-import { IJsSchema } from '../types'
+import { IJsSchema, SimpleType } from '../types'
 
 export interface IPropOptions {
-  type?: string | { [prop: string]: any }
+  type?: SimpleType
   schema?: any
   required?: boolean
   desc?: string
