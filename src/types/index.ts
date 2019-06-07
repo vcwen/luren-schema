@@ -4,6 +4,16 @@ export interface IJsonOptions {
   type?: string
   additionalProps?: { [key: string]: any }
 }
+export interface IJsonSchema {
+  type?: string
+  format?: string
+  properties?: { [prop: string]: IJsSchema }
+  items?: IJsSchema
+  required?: string[]
+  description?: string
+  default?: any
+  [prop: string]: any
+}
 export interface IJsSchema {
   private?: boolean
   virtual?: boolean
@@ -19,6 +29,7 @@ export interface IJsSchema {
   description?: string
   default?: any
   [prop: string]: any
+  toJsonSchema?: () => IJsonSchema
 }
 
 // tslint:disable-next-line: no-empty-interface

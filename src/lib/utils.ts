@@ -206,39 +206,41 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<I
   let jsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
   if (jsonSchema) {
     return jsonSchema
-  } else {
-    jsonSchema = _.cloneDeep(schema) as any
-    const typeOptions = jsDataTypes.get(schema.type)
-    if (typeOptions && typeOptions.json) {
-      if (typeOptions.json.type) {
-        jsonSchema.type = typeOptions.json.type
-      }
-      if (typeOptions.json.additionalProps) {
-        Object.assign(jsonSchema, typeOptions.json.additionalProps)
-      }
-    }
-    if (jsonSchema.classConstructor) {
-      Reflect.deleteProperty(jsonSchema, 'classConstructor')
-    }
-
-    if (jsonSchema.items) {
-      jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items, jsDataTypes)
-    }
-    const properties = schema.properties
-    if (properties) {
-      jsonSchema.properties = {}
-      const props = Object.getOwnPropertyNames(properties)
-      for (const prop of props) {
-        const propSchema = properties[prop]
-        if (propSchema.private) {
-          continue
-        }
-        jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema, jsDataTypes)
-      }
-    }
-    Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
-    return jsonSchema
   }
+  if (schema.toJsonSchema) {
+    return schema.toJsonSchema()
+  }
+  jsonSchema = _.cloneDeep(schema) as any
+  const typeOptions = jsDataTypes.get(schema.type)
+  if (typeOptions && typeOptions.json) {
+    if (typeOptions.json.type) {
+      jsonSchema.type = typeOptions.json.type
+    }
+    if (typeOptions.json.additionalProps) {
+      Object.assign(jsonSchema, typeOptions.json.additionalProps)
+    }
+  }
+  if (jsonSchema.classConstructor) {
+    Reflect.deleteProperty(jsonSchema, 'classConstructor')
+  }
+
+  if (jsonSchema.items) {
+    jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items, jsDataTypes)
+  }
+  const properties = schema.properties
+  if (properties) {
+    jsonSchema.properties = {}
+    const props = Object.getOwnPropertyNames(properties)
+    for (const prop of props) {
+      const propSchema = properties[prop]
+      if (propSchema.private) {
+        continue
+      }
+      jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema, jsDataTypes)
+    }
+  }
+  Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
+  return jsonSchema
 }
 
 export const mixinDecorators = (target: any, ...mixins: any[]) => {
