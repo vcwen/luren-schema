@@ -7,6 +7,9 @@ export const createPersistDataTypes = () => {
   const dataTypes = new DataTypes<IPersistTypeOptions>()
   class StringPersistTypeOptions implements IPersistTypeOptions {
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'string') {
         return [true, '']
       } else {
@@ -28,6 +31,9 @@ export const createPersistDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class BooleanPersistTypeOptions implements ITypeOptions {
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'boolean') {
         return [true, '']
       } else {
@@ -48,6 +54,9 @@ export const createPersistDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class NumberPersistTypeOptions implements ITypeOptions {
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'number') {
         return [true, '']
       } else {
@@ -69,6 +78,9 @@ export const createPersistDataTypes = () => {
   class ArrayPersistTypeOptions implements ITypeOptions {
     public type: string = 'array'
     public validate(schema: IPersistSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (Array.isArray(val)) {
         const itemSchema = schema.items
         if (itemSchema) {
@@ -97,12 +109,9 @@ export const createPersistDataTypes = () => {
             const serialize = getSerialize(itemSchema, dataTypes)
             if (serialize) {
               return val.map((item) => serialize(itemSchema, item))
-            } else {
-              return val
             }
-          } else {
-            return val
           }
+          return val
         } else {
           throw new Error('Data must be an array')
         }
@@ -118,12 +127,11 @@ export const createPersistDataTypes = () => {
           const deserialize = getDeserialize(itemSchema, dataTypes)
           if (deserialize) {
             return val.map((item) => deserialize(itemSchema, item))
-          } else {
-            return val
           }
-        } else {
-          throw new Error('Data must be an array')
+          return val
         }
+      } else {
+        throw new Error('Data must be an array')
       }
     }
   }
@@ -131,6 +139,9 @@ export const createPersistDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class ObjectPersistTypeOptions implements ITypeOptions {
     public validate(schema: IPersistSchema, data: any): [boolean, string] {
+      if (data === undefined) {
+        return [true, '']
+      }
       if (typeof data !== 'object') {
         return [false, 'Invalid object']
       } else {
@@ -178,6 +189,18 @@ export const createPersistDataTypes = () => {
               Reflect.set(doc, prop, value)
             }
           }
+          if (schema.additionalProperties) {
+            const dataProps = Object.getOwnPropertyNames(doc)
+            for (const dataProp of dataProps) {
+              if (!propNames.includes(dataProp)) {
+                const value = Reflect.get(doc, dataProp)
+                if (value === undefined) {
+                  continue
+                }
+                Reflect.set(doc, dataProp, value)
+              }
+            }
+          }
           return doc
         } else {
           return data
@@ -204,6 +227,18 @@ export const createPersistDataTypes = () => {
             }
             if (value !== undefined) {
               Reflect.set(obj, prop, value)
+            }
+          }
+          if (schema.additionalProperties) {
+            const dataProps = Object.getOwnPropertyNames(doc)
+            for (const dataProp of dataProps) {
+              if (!propNames.includes(dataProp)) {
+                const value = Reflect.get(doc, dataProp)
+                if (value === undefined) {
+                  continue
+                }
+                Reflect.set(obj, dataProp, value)
+              }
             }
           }
           return obj

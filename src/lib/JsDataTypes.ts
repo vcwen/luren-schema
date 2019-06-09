@@ -9,6 +9,9 @@ export const createJsDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class StringTypeOptions implements IJsTypeOptions {
     public validate(_1: IJsSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'string') {
         return [true, '']
       } else {
@@ -30,6 +33,9 @@ export const createJsDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class BooleanTypeOptions implements IJsTypeOptions {
     public validate(_1: IJsSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'boolean') {
         return [true, '']
       } else {
@@ -50,6 +56,9 @@ export const createJsDataTypes = () => {
   // tslint:disable-next-line: max-classes-per-file
   class NumberTypeOptions implements IJsTypeOptions {
     public validate(_1: IJsSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (typeof val === 'number') {
         return [true, '']
       } else {
@@ -74,6 +83,9 @@ export const createJsDataTypes = () => {
       type: 'string'
     }
     public validate(_1: IJsSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (val instanceof Date && !Number.isNaN(val.getTime())) {
         return [true, '']
       } else {
@@ -101,6 +113,9 @@ export const createJsDataTypes = () => {
   class ArrayTypeOptions implements IJsTypeOptions {
     public type: string = 'array'
     public validate(schema: IJsSchema, val: any): [boolean, string] {
+      if (val === undefined) {
+        return [true, '']
+      }
       if (Array.isArray(val)) {
         const itemSchema = schema.items
         if (itemSchema) {
@@ -129,12 +144,9 @@ export const createJsDataTypes = () => {
             const serialize = getSerialize(itemSchema, jsDataTypes)
             if (serialize) {
               return val.map((item) => serialize(itemSchema, item))
-            } else {
-              return val
             }
-          } else {
-            return val
           }
+          return val
         } else {
           throw new Error('Data must be an array')
         }
@@ -150,12 +162,9 @@ export const createJsDataTypes = () => {
             const deserialize = getDeserialize(itemSchema, jsDataTypes)
             if (deserialize) {
               return val.map((item) => deserialize(itemSchema, item))
-            } else {
-              return val
             }
-          } else {
-            return val
           }
+          return val
         }
       }
     }
@@ -165,6 +174,9 @@ export const createJsDataTypes = () => {
   class ObjectTypeOptions implements IJsTypeOptions {
     public type: string = 'object'
     public validate(schema: IJsSchema, data: any): [boolean, string] {
+      if (data === undefined) {
+        return [true, '']
+      }
       if (typeof data !== 'object') {
         return [false, 'Invalid object']
       }
@@ -210,7 +222,22 @@ export const createJsDataTypes = () => {
             if (serialize) {
               value = serialize(propSchema, value)
             }
+            if (value === undefined) {
+              continue
+            }
             Reflect.set(json, prop, value)
+          }
+          if (schema.additionalProperties) {
+            const dataProps = Object.getOwnPropertyNames(data)
+            for (const dataProp of dataProps) {
+              if (!propNames.includes(dataProp)) {
+                const value = Reflect.get(data, dataProp)
+                if (value === undefined) {
+                  continue
+                }
+                Reflect.set(json, dataProp, value)
+              }
+            }
           }
         } else {
           Object.assign(json, data)
@@ -236,7 +263,22 @@ export const createJsDataTypes = () => {
             if (deserialize) {
               value = deserialize(propSchema, value)
             }
+            if (value === undefined) {
+              continue
+            }
             Reflect.set(obj, prop, value)
+          }
+          if (schema.additionalProperties) {
+            const dataProps = Object.getOwnPropertyNames(data)
+            for (const dataProp of dataProps) {
+              if (!propNames.includes(dataProp)) {
+                const value = Reflect.get(data, dataProp)
+                if (value === undefined) {
+                  continue
+                }
+                Reflect.set(obj, dataProp, value)
+              }
+            }
           }
           return obj
         } else {

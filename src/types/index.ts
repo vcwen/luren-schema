@@ -28,8 +28,9 @@ export interface IJsSchema {
   required?: string[]
   description?: string
   default?: any
-  [prop: string]: any
+  additionalProperties?: boolean
   toJsonSchema?: () => IJsonSchema
+  [prop: string]: any
 }
 
 // tslint:disable-next-line: no-empty-interface
