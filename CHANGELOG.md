@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.15"></a>
+## [0.0.15](https://github.com/vcwen/luren-schema/compare/v0.0.14...v0.0.15) (2019-06-10)
+
+
+### Bug Fixes
+
+* **JsSchema:** add addtionalProperties for object & bugfixes ([763e7c2](https://github.com/vcwen/luren-schema/commit/763e7c2))
+
+
+
 <a name="0.0.14"></a>
 ## [0.0.14](https://github.com/vcwen/luren-schema/compare/v0.0.13...v0.0.14) (2019-06-07)
 
