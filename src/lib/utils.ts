@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
-import { SchemaMetadata } from '../decorators/schema'
+import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 
