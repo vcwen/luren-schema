@@ -11,6 +11,7 @@ export interface ISchemaOptions {
   serialize?: (schema: IJsSchema, data: any) => any
   deserialize?: (schema: IJsSchema, data: any) => any
   private?: boolean
+  additionalProps?: boolean
   desc?: string
 }
 
@@ -59,7 +60,10 @@ export function Schema(options: ISchemaOptions = {}) {
       jsSchema.deserialize = options.deserialize
     }
     if (options.private) {
-      jsSchema.private = options.private
+      jsSchema.private = true
+    }
+    if (options.additionalProps) {
+      jsSchema.additionalProperties = true
     }
 
     const metadata = new SchemaMetadata(options.id || constructor.name, jsSchema, options.desc)
