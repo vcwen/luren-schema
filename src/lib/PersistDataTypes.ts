@@ -128,8 +128,8 @@ export const createPersistDataTypes = () => {
           if (deserialize) {
             return val.map((item) => deserialize(itemSchema, item))
           }
-          return val
         }
+        return val
       } else {
         throw new Error('Data must be an array')
       }
