@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.19"></a>
+## [0.0.19](https://github.com/vcwen/luren-schema/compare/v0.0.18...v0.0.19) (2019-06-24)
+
+
+### Bug Fixes
+
+* **PersistDataTypes.ts:** fix array deserialize ([3ea27b5](https://github.com/vcwen/luren-schema/commit/3ea27b5))
+
+
+
 <a name="0.0.18"></a>
 ## [0.0.18](https://github.com/vcwen/luren-schema/compare/v0.0.17...v0.0.18) (2019-06-14)
 
