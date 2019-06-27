@@ -5,6 +5,24 @@ import { getDeserialize, getSerialize, getValidate } from './utils'
 
 export const createPersistDataTypes = () => {
   const dataTypes = new DataTypes<IPersistTypeOptions>()
+
+  class AnyPersistTypeOptions implements IPersistTypeOptions {
+    public validate(_1: IPersistSchema): [boolean, string] {
+      return [true, '']
+    }
+    public serialize(schema: IPersistSchema, val?: any) {
+      if (val === undefined) {
+        return schema.default
+      } else {
+        return val
+      }
+    }
+    public deserialize(_1: IPersistSchema, val?: string) {
+      return val
+    }
+  }
+
+  // tslint:disable-next-line: max-classes-per-file
   class StringPersistTypeOptions implements IPersistTypeOptions {
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
       if (val === undefined) {
@@ -249,6 +267,7 @@ export const createPersistDataTypes = () => {
     }
   }
 
+  dataTypes.add('any', new AnyPersistTypeOptions())
   dataTypes.add('string', new StringPersistTypeOptions())
   dataTypes.add('boolean', new BooleanPersistTypeOptions())
   dataTypes.add('number', new NumberPersistTypeOptions())

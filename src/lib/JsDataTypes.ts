@@ -7,6 +7,23 @@ export const createJsDataTypes = () => {
   const jsDataTypes = new DataTypes<IJsTypeOptions>()
 
   // tslint:disable-next-line: max-classes-per-file
+  class AnyTypeOptions implements IJsTypeOptions {
+    public validate(_1: IJsSchema): [boolean, string] {
+      return [true, '']
+    }
+    public serialize(_1: IJsSchema, val?: string) {
+      return val
+    }
+    public deserialize(schema: IJsSchema, val?: any) {
+      if (val === undefined) {
+        return schema.default
+      } else {
+        return val
+      }
+    }
+  }
+
+  // tslint:disable-next-line: max-classes-per-file
   class StringTypeOptions implements IJsTypeOptions {
     public validate(_1: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
@@ -288,6 +305,7 @@ export const createJsDataTypes = () => {
     }
   }
 
+  jsDataTypes.add('any', new AnyTypeOptions())
   jsDataTypes.add('string', new StringTypeOptions())
   jsDataTypes.add('boolean', new BooleanTypeOptions())
   jsDataTypes.add('number', new NumberTypeOptions())
