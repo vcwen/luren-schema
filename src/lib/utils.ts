@@ -51,7 +51,7 @@ export const validate = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITyp
   if (validateFunc) {
     return validateFunc(schema, data)
   } else {
-    return [true, '']
+    throw new Error(`No validate function available for ${schema.type}`)
   }
 }
 
@@ -60,6 +60,8 @@ export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes<I
   const deserializeFunc = getDeserialize(schema, dataTypes)
   if (deserializeFunc) {
     data = deserializeFunc(schema, json)
+  } else {
+    throw new Error(`No deserialize function available for ${schema.type}`)
   }
   const [valid, msg] = validate(schema, data, dataTypes)
   if (!valid) {
@@ -78,7 +80,7 @@ export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes<ITy
   if (serializeFunc) {
     return serializeFunc(schema, data)
   } else {
-    return data
+    throw new Error(`No serialize function available for ${schema.type}`)
   }
 }
 
