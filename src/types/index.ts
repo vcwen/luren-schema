@@ -1,14 +1,10 @@
 export type Constructor<T> = new (...args: any[]) => T
 
-export interface IJsonOptions {
-  type?: string
-  additionalProps?: { [key: string]: any }
-}
 export interface IJsonSchema {
   type?: string
   format?: string
-  properties?: { [prop: string]: IJsSchema }
-  items?: IJsSchema
+  properties?: { [prop: string]: IJsonSchema }
+  items?: IJsonSchema
   required?: string[]
   description?: string
   default?: any
@@ -43,7 +39,7 @@ export interface ITypeOptions {
 }
 
 export interface IJsTypeOptions extends ITypeOptions {
-  json?: IJsonOptions
+  toJsonSchema: () => IJsonSchema
 }
 
 // tslint:disable-next-line: no-empty-interface

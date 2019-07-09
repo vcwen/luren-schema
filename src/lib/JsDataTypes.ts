@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { IJsonOptions, IJsSchema, IJsTypeOptions } from '../types'
+import { IJsSchema, IJsTypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
@@ -8,6 +8,9 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class AnyTypeOptions implements IJsTypeOptions {
+    public toJsonSchema() {
+      return {}
+    }
     public validate(_1: IJsSchema): [boolean, string] {
       return [true, '']
     }
@@ -25,6 +28,9 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class StringTypeOptions implements IJsTypeOptions {
+    public toJsonSchema() {
+      return { type: 'string' }
+    }
     public validate(_1: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -49,6 +55,9 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class BooleanTypeOptions implements IJsTypeOptions {
+    public toJsonSchema() {
+      return { type: 'boolean' }
+    }
     public validate(_1: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -72,6 +81,9 @@ export const createJsDataTypes = () => {
   }
   // tslint:disable-next-line: max-classes-per-file
   class NumberTypeOptions implements IJsTypeOptions {
+    public toJsonSchema() {
+      return { type: 'number' }
+    }
     public validate(_1: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -96,8 +108,8 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class DateTypeOptions implements IJsTypeOptions {
-    public json: IJsonOptions = {
-      type: 'string'
+    public toJsonSchema() {
+      return { type: 'string', format: 'date-time' }
     }
     public validate(_1: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
@@ -128,7 +140,9 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class ArrayTypeOptions implements IJsTypeOptions {
-    public type: string = 'array'
+    public toJsonSchema() {
+      return { type: 'array' }
+    }
     public validate(schema: IJsSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -189,7 +203,9 @@ export const createJsDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class ObjectTypeOptions implements IJsTypeOptions {
-    public type: string = 'object'
+    public toJsonSchema() {
+      return { type: 'object' }
+    }
     public validate(schema: IJsSchema, data: any): [boolean, string] {
       if (data === undefined) {
         return [true, '']

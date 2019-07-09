@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
-import { Constructor, IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
+import { Constructor, IJsonSchema, IJsSchema, IJsTypeOptions, ITypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 
 export const getTypeOption = <T>(
@@ -205,29 +205,24 @@ export const normalizeSimpleSchema = (schema: any) => {
 }
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<IJsTypeOptions>) => {
-  let jsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
+  let jsonSchema: IJsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
   if (jsonSchema) {
     return jsonSchema
   }
   if (schema.toJsonSchema) {
     return schema.toJsonSchema()
   }
-  jsonSchema = _.cloneDeep(schema) as any
+  const jsSchema = _.cloneDeep(schema)
   const typeOptions = jsDataTypes.get(schema.type)
-  if (typeOptions && typeOptions.json) {
-    if (typeOptions.json.type) {
-      jsonSchema.type = typeOptions.json.type
-    }
-    if (typeOptions.json.additionalProps) {
-      Object.assign(jsonSchema, typeOptions.json.additionalProps)
-    }
-  }
-  if (jsonSchema.classConstructor) {
-    Reflect.deleteProperty(jsonSchema, 'classConstructor')
+
+  if (typeOptions) {
+    jsonSchema = typeOptions.toJsonSchema()
+  } else {
+    jsonSchema = { type: jsSchema.type }
   }
 
-  if (jsonSchema.items) {
-    jsonSchema.items = jsSchemaToJsonSchema(jsonSchema.items, jsDataTypes)
+  if (jsSchema.items) {
+    jsonSchema.items = jsSchemaToJsonSchema(jsSchema.items, jsDataTypes)
   }
   const properties = schema.properties
   if (properties) {
@@ -239,6 +234,15 @@ export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<I
         continue
       }
       jsonSchema.properties[prop] = jsSchemaToJsonSchema(propSchema, jsDataTypes)
+    }
+  }
+  const propNames = Object.getOwnPropertyNames(jsSchema)
+  for (const prop of propNames) {
+    if (['items', 'properties'].includes(prop)) {
+      continue
+    }
+    if (jsSchema[prop] !== undefined && typeof jsSchema[prop] !== 'function') {
+      Reflect.set(jsonSchema, 'prop', jsSchema[prop])
     }
   }
   Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)

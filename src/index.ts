@@ -1,12 +1,4 @@
-export {
-  IJsSchema,
-  ITypeOptions,
-  IPersistSchema,
-  IPersistTypeOptions,
-  IJsTypeOptions,
-  IJsonOptions,
-  SimpleType
-} from './types'
+export { IJsSchema, ITypeOptions, IPersistSchema, IPersistTypeOptions, IJsTypeOptions, SimpleType } from './types'
 export { IPropOptions, Prop, PropMetadata } from './decorators/Prop'
 export { ISchemaOptions, Schema, SchemaMetadata } from './decorators/Schema'
 export {
