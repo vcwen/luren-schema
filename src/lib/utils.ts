@@ -196,12 +196,9 @@ export const convertSimpleSchemaToJsSchema = (
 }
 
 export const normalizeSimpleSchema = (schema: any) => {
-  return convertSimpleSchemaToJsSchema(schema, (constructor) => {
-    const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, constructor.prototype)
-    if (schemaMetadata) {
-      return schemaMetadata.schema
-    }
-  })
+  return convertSimpleSchemaToJsSchema(schema, (constructor) =>
+    Reflect.getMetadata(MetadataKey.SCHEMA, constructor.prototype)
+  )
 }
 
 export const jsSchemaToJsonSchema = (schema: IJsSchema, jsDataTypes: DataTypes<IJsTypeOptions>) => {
