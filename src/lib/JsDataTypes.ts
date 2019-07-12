@@ -1,13 +1,13 @@
 import _ from 'lodash'
-import { IJsSchema, IJsTypeOptions } from '../types'
+import { IJsSchema, ITypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
 export const createJsDataTypes = () => {
-  const jsDataTypes = new DataTypes<IJsTypeOptions>()
+  const jsDataTypes = new DataTypes()
 
   // tslint:disable-next-line: max-classes-per-file
-  class AnyTypeOptions implements IJsTypeOptions {
+  class AnyTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return {}
     }
@@ -27,7 +27,7 @@ export const createJsDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class StringTypeOptions implements IJsTypeOptions {
+  class StringTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'string' }
     }
@@ -54,7 +54,7 @@ export const createJsDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class BooleanTypeOptions implements IJsTypeOptions {
+  class BooleanTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'boolean' }
     }
@@ -80,7 +80,7 @@ export const createJsDataTypes = () => {
     }
   }
   // tslint:disable-next-line: max-classes-per-file
-  class NumberTypeOptions implements IJsTypeOptions {
+  class NumberTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'number' }
     }
@@ -107,7 +107,7 @@ export const createJsDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class DateTypeOptions implements IJsTypeOptions {
+  class DateTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'string', format: 'date-time' }
     }
@@ -139,7 +139,7 @@ export const createJsDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class ArrayTypeOptions implements IJsTypeOptions {
+  class ArrayTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'array' }
     }
@@ -202,7 +202,7 @@ export const createJsDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class ObjectTypeOptions implements IJsTypeOptions {
+  class ObjectTypeOptions implements ITypeOptions {
     public toJsonSchema() {
       return { type: 'object' }
     }

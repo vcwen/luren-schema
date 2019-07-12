@@ -7,9 +7,6 @@ import { PropMetadata } from './Prop'
 
 export interface ISchemaOptions {
   id?: string
-  validate?: (schema: IJsSchema, data: any) => [boolean, string]
-  serialize?: (schema: IJsSchema, data: any) => any
-  deserialize?: (schema: IJsSchema, data: any) => any
   private?: boolean
   additionalProps?: boolean
   desc?: string
@@ -49,15 +46,6 @@ export function Schema(options: ISchemaOptions = {}) {
     }
     if (!_.isEmpty(requiredProps)) {
       jsSchema.required = requiredProps
-    }
-    if (options.validate) {
-      jsSchema.validate = options.validate
-    }
-    if (options.serialize) {
-      jsSchema.serialize = options.serialize
-    }
-    if (options.deserialize) {
-      jsSchema.deserialize = options.deserialize
     }
     if (options.private) {
       jsSchema.private = true

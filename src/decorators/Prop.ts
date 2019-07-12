@@ -16,9 +16,6 @@ export interface IPropOptions {
   virtual?: boolean
   private?: boolean
   default?: any
-  validate?: (schema: IJsSchema, data: any) => [boolean, string]
-  serialize?: (schema: IJsSchema, data: any) => any
-  deserialize?: (schema: IJsSchema, data: any) => any
 }
 
 export class PropMetadata {
@@ -56,15 +53,6 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   metadata.enum = options.enum
   metadata.const = options.const
   metadata.private = options.private || false
-  if (options.validate) {
-    metadata.schema.validate = options.validate
-  }
-  if (options.serialize) {
-    metadata.schema.serialize = options.serialize
-  }
-  if (options.deserialize) {
-    metadata.schema.deserialize = options.deserialize
-  }
   if (options.private) {
     metadata.schema.private = options.private
   }

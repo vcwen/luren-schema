@@ -1,12 +1,15 @@
 import _ from 'lodash'
-import { IPersistSchema, IPersistTypeOptions, ITypeOptions } from '../types'
+import { IPersistSchema, ITypeOptions } from '../types'
 import { DataTypes } from './DataTypes'
 import { getDeserialize, getSerialize, getValidate } from './utils'
 
 export const createPersistDataTypes = () => {
-  const dataTypes = new DataTypes<IPersistTypeOptions>()
+  const dataTypes = new DataTypes()
 
-  class AnyPersistTypeOptions implements IPersistTypeOptions {
+  class AnyPersistTypeOptions implements ITypeOptions {
+    public toJsonSchema() {
+      return {}
+    }
     public validate(_1: IPersistSchema): [boolean, string] {
       return [true, '']
     }
@@ -23,7 +26,10 @@ export const createPersistDataTypes = () => {
   }
 
   // tslint:disable-next-line: max-classes-per-file
-  class StringPersistTypeOptions implements IPersistTypeOptions {
+  class StringPersistTypeOptions implements ITypeOptions {
+    public toJsonSchema() {
+      return { type: 'string' }
+    }
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -48,6 +54,9 @@ export const createPersistDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class BooleanPersistTypeOptions implements ITypeOptions {
+    public toJsonSchema() {
+      return { type: 'boolean' }
+    }
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -71,6 +80,9 @@ export const createPersistDataTypes = () => {
   }
   // tslint:disable-next-line: max-classes-per-file
   class NumberPersistTypeOptions implements ITypeOptions {
+    public toJsonSchema() {
+      return { type: 'number' }
+    }
     public validate(_1: IPersistSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -94,7 +106,9 @@ export const createPersistDataTypes = () => {
   }
   // tslint:disable-next-line: max-classes-per-file
   class ArrayPersistTypeOptions implements ITypeOptions {
-    public type: string = 'array'
+    public toJsonSchema() {
+      return { type: 'array' }
+    }
     public validate(schema: IPersistSchema, val: any): [boolean, string] {
       if (val === undefined) {
         return [true, '']
@@ -156,6 +170,9 @@ export const createPersistDataTypes = () => {
 
   // tslint:disable-next-line: max-classes-per-file
   class ObjectPersistTypeOptions implements ITypeOptions {
+    public toJsonSchema() {
+      return { type: 'object' }
+    }
     public validate(schema: IPersistSchema, data: any): [boolean, string] {
       if (data === undefined) {
         return [true, '']
@@ -234,7 +251,7 @@ export const createPersistDataTypes = () => {
         }
         const properties = schema.properties
         if (properties && !_.isEmpty(properties)) {
-          const obj = schema.classConstructor ? new schema.classConstructor() : {}
+          const obj = {}
           const propNames = Object.getOwnPropertyNames(properties)
           for (const prop of propNames) {
             const propSchema = properties[prop]

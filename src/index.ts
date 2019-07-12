@@ -1,4 +1,4 @@
-export { IJsSchema, ITypeOptions, IPersistSchema, IPersistTypeOptions, IJsTypeOptions, SimpleType } from './types'
+export { IDataSchema, IJsSchema, ITypeOptions, IPersistSchema, SimpleType } from './types'
 export { IPropOptions, Prop, PropMetadata } from './decorators/Prop'
 export { ISchemaOptions, Schema, SchemaMetadata } from './decorators/Schema'
 export {
@@ -11,7 +11,6 @@ export {
   convertSimpleSchemaToJsSchema,
   getDeserialize,
   getSerialize,
-  getTypeOption,
   getValidate
 } from './lib/utils'
 export { DataTypes } from './lib/DataTypes'

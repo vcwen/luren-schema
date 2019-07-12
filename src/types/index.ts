@@ -10,40 +10,38 @@ export interface IJsonSchema {
   default?: any
   [prop: string]: any
 }
-export interface IJsSchema {
-  private?: boolean
-  virtual?: boolean
+
+export interface IDataSchema {
   type: string
-  classConstructor?: Constructor<any>
-  validate?: (schema: IJsSchema, data: any) => [boolean, string]
-  serialize?: (schema: IJsSchema, data: any) => any
-  deserialize?: (schema: IJsSchema, data: any) => any
   format?: string
-  properties?: { [prop: string]: IJsSchema }
-  items?: IJsSchema
+  properties?: { [prop: string]: IDataSchema }
+  items?: IDataSchema
   required?: string[]
   description?: string
   default?: any
   additionalProperties?: boolean
   toJsonSchema?: () => IJsonSchema
-  [prop: string]: any
+}
+export interface IJsSchema extends IDataSchema {
+  private?: boolean
+  virtual?: boolean
+  classConstructor?: Constructor<any>
+  properties?: { [prop: string]: IJsSchema }
+  items?: IJsSchema
 }
 
 // tslint:disable-next-line: no-empty-interface
-export interface IPersistSchema extends IJsSchema {}
+export interface IPersistSchema extends IDataSchema {
+  properties?: { [prop: string]: IPersistSchema }
+  items?: IPersistSchema
+}
 
 export interface ITypeOptions {
-  validate?: (schema: IJsSchema, data: any) => [boolean, string]
-  serialize?: (schema: IJsSchema, data: any) => any
-  deserialize?: (schema: IJsSchema, data: any) => any
-}
-
-export interface IJsTypeOptions extends ITypeOptions {
+  validate?: (schema: IDataSchema, data: any) => [boolean, string]
+  serialize?: (schema: IDataSchema, data: any) => any
+  deserialize?: (schema: IDataSchema, data: any) => any
   toJsonSchema: () => IJsonSchema
 }
-
-// tslint:disable-next-line: no-empty-interface
-export interface IPersistTypeOptions extends ITypeOptions {}
 
 export type SimpleType =
   | string
