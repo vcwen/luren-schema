@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.25](https://github.com/vcwen/luren-schema/compare/v0.0.24...v0.0.25) (2019-07-12)
+
+
+### Bug Fixes
+
+* **utils.ts:** fix normalizeSimpleType ([00d872c](https://github.com/vcwen/luren-schema/commit/00d872c))
+
+
+
 ### [0.0.24](https://github.com/vcwen/luren-schema/compare/v0.0.23...v0.0.24) (2019-07-12)
 
 
