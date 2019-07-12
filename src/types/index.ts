@@ -20,12 +20,13 @@ export interface IDataSchema {
   description?: string
   default?: any
   additionalProperties?: boolean
+  classConstructor?: Constructor<any>
+  [prop: string]: any
   toJsonSchema?: () => IJsonSchema
 }
 export interface IJsSchema extends IDataSchema {
   private?: boolean
   virtual?: boolean
-  classConstructor?: Constructor<any>
   properties?: { [prop: string]: IJsSchema }
   items?: IJsSchema
 }

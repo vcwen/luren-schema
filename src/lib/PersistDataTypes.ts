@@ -251,7 +251,7 @@ export const createPersistDataTypes = () => {
         }
         const properties = schema.properties
         if (properties && !_.isEmpty(properties)) {
-          const obj = {}
+          const obj = schema.classConstructor ? new schema.classConstructor() : {}
           const propNames = Object.getOwnPropertyNames(properties)
           for (const prop of propNames) {
             const propSchema = properties[prop]
