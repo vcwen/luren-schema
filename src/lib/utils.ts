@@ -120,7 +120,7 @@ const normalizeProp = (decoratedProp: string): [string, boolean] => {
 }
 
 export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean] => {
-  if (typeof schema === 'object') {
+  if (typeof schema === 'object' && !Array.isArray(schema)) {
     const resolver: (simpleSchema: any) => IJsSchema | undefined = Reflect.getMetadata(
       MetadataKey.SIMPLE_SCHEMA_RESOLVER,
       schema
@@ -163,12 +163,20 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
     }
   }
 
+  let extraOptions: any
+
+  // if length is greater than one, it means it has options rather than an array type
+  if (Array.isArray(schema) && schema.length > 1) {
+    extraOptions = schema[1]
+    schema = schema[0]
+  }
+
   if (typeof schema === 'string') {
     const [type, required] = normalizeType(schema)
-    const jsonSchema: any = { type }
-    return [jsonSchema, required]
+    const jsSchema: any = Object.assign({ type }, extraOptions)
+    return [jsSchema, required]
   } else if (Array.isArray(schema)) {
-    const propSchema: any = { type: 'array' }
+    const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
     if (schema[0]) {
       const [itemSchema] = convertSimpleSchemaToJsSchema(schema[0])
       propSchema.items = itemSchema
@@ -191,6 +199,7 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
     if (!_.isEmpty(requiredProps)) {
       jsSchema.required = requiredProps
     }
+    Object.assign(jsSchema, extraOptions)
     return [jsSchema, true]
   } else {
     throw new TypeError('Invalid schema:' + schema)
