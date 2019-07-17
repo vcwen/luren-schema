@@ -225,8 +225,8 @@ export const toJsonSchema = <T extends IDataSchema>(
     jsonSchema.items = toJsonSchema(jsSchema.items as T, dataTypes, propertiesHandler)
   }
   let properties = schema.properties
-  jsonSchema.properties = {}
   if (properties) {
+    jsonSchema.properties = {}
     if (propertiesHandler) {
       properties = propertiesHandler(properties as any)
     }
