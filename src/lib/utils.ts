@@ -236,11 +236,10 @@ export const toJsonSchema = <T extends IDataSchema>(
       jsonSchema.properties[prop] = toJsonSchema(propSchema as T, dataTypes, propertiesHandler)
     }
   }
-  const propNames = Object.getOwnPropertyNames(jsSchema)
+  const propNames = Object.getOwnPropertyNames(jsSchema).filter(
+    (prop) => !['type', 'items', 'properties'].includes(prop)
+  )
   for (const prop of propNames) {
-    if (['items', 'properties'].includes(prop)) {
-      continue
-    }
     const val = Reflect.get(jsSchema, prop)
     if (val !== undefined && typeof val !== 'function') {
       Reflect.set(jsonSchema, prop, val)
