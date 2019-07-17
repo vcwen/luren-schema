@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.27"></a>
+## [0.0.27](https://github.com/vcwen/luren-schema/compare/v0.0.26...v0.0.27) (2019-07-17)
+
+
+### Features
+
+* **simple type:** allow set type options ([a569bd8](https://github.com/vcwen/luren-schema/commit/a569bd8))
+
+
+
 <a name="0.0.26"></a>
 ## [0.0.26](https://github.com/vcwen/luren-schema/compare/v0.0.25...v0.0.26) (2019-07-17)
 
