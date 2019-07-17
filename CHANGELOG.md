@@ -1,38 +1,15 @@
-# Changelog
+# Change Log
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [0.0.25](https://github.com/vcwen/luren-schema/compare/v0.0.24...v0.0.25) (2019-07-12)
+<a name="0.0.26"></a>
+## [0.0.26](https://github.com/vcwen/luren-schema/compare/v0.0.25...v0.0.26) (2019-07-17)
 
 
 ### Bug Fixes
 
-* **utils.ts:** fix normalizeSimpleType ([00d872c](https://github.com/vcwen/luren-schema/commit/00d872c))
-
-
-
-### [0.0.24](https://github.com/vcwen/luren-schema/compare/v0.0.23...v0.0.24) (2019-07-12)
-
-
-
-### [0.0.23](https://github.com/vcwen/luren-schema/compare/v0.0.22...v0.0.23) (2019-07-12)
-
-
-
-### [0.0.22](https://github.com/vcwen/luren-schema/compare/v0.0.21...v0.0.22) (2019-07-12)
-
-
-
-### [0.0.21](https://github.com/vcwen/luren-schema/compare/v0.0.20...v0.0.21) (2019-07-09)
-
-
-
-### [0.0.20](https://github.com/vcwen/luren-schema/compare/v0.0.15...v0.0.20) (2019-07-09)
-
-
-### Bug Fixes
-
-* **PersistDataTypes.ts:** fix array deserialize ([3ea27b5](https://github.com/vcwen/luren-schema/commit/3ea27b5))
+* **toJsonSchema:** fix  type is not correct ([593d1c3](https://github.com/vcwen/luren-schema/commit/593d1c3))
+* **toJsonSchema:** fix properties ([3958220](https://github.com/vcwen/luren-schema/commit/3958220))
 
 
 
