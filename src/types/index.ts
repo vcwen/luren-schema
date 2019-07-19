@@ -38,9 +38,9 @@ export interface IPersistSchema extends IDataSchema {
 }
 
 export interface ITypeOptions {
-  validate?: (schema: IDataSchema, data: any) => [boolean, string]
-  serialize?: (schema: IDataSchema, data: any) => any
-  deserialize?: (schema: IDataSchema, data: any) => any
+  validate: (schema: IDataSchema, data: any) => [boolean, string]
+  serialize: (schema: IDataSchema, data: any) => any
+  deserialize: (schema: IDataSchema, data: any) => any
   toJsonSchema: () => IJsonSchema
 }
 
