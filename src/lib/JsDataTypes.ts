@@ -330,3 +330,6 @@ export const createJsDataTypes = () => {
   jsDataTypes.add('object', new ObjectTypeOptions())
   return jsDataTypes
 }
+
+const JsDataTypes = createJsDataTypes()
+export default JsDataTypes
