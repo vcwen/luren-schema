@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.33](https://github.com/vcwen/luren-schema/compare/v0.0.32...v0.0.33) (2019-07-29)
+
+
+### Bug Fixes
+
+* **export:** explictly export rather than export default ([e5a07fc](https://github.com/vcwen/luren-schema/commit/e5a07fc))
+
+
+
 ### [0.0.32](https://github.com/vcwen/luren-schema/compare/v0.0.31...v0.0.32) (2019-07-29)
 
 
