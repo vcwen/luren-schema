@@ -14,6 +14,6 @@ export {
   getValidate
 } from './lib/utils'
 export { DataTypes } from './lib/DataTypes'
-export { createJsDataTypes } from './lib/JsDataTypes'
+export * from './lib/JsDataTypes'
 export { createPersistDataTypes } from './lib/PersistDataTypes'
 export { MetadataKey } from './constants/MetadataKey'
