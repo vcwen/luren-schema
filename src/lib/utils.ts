@@ -1,10 +1,15 @@
 import _ from 'lodash'
+import util from 'util'
 import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IDataSchema, IJsonSchema, IJsSchema, IPersistSchema } from '../types'
 import { DataTypes } from './DataTypes'
+import JsDataTypes from './JsDataTypes'
 
+export const isPrimitive = (value: any) => {
+  return (typeof value !== 'object' && typeof value !== 'function') || value === null
+}
 export const getValidate = (
   schema: IJsSchema,
   dataTypes: DataTypes
@@ -49,7 +54,15 @@ export const defineSchema = (
   }
 }
 
-export const validate = (schema: IJsSchema, data: any, dataTypes: DataTypes): [boolean, string] => {
+export const validate = (data: any, schema?: IJsSchema, dataTypes: DataTypes = JsDataTypes): [boolean, string] => {
+  if (!schema) {
+    const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
+    if (metadata) {
+      schema = metadata.schema
+    } else {
+      throw new Error(`No schema found for ${util.inspect(data)}`)
+    }
+  }
   const validator = getValidate(schema, dataTypes)
   if (validator) {
     return validator(schema, data)
@@ -58,27 +71,34 @@ export const validate = (schema: IJsSchema, data: any, dataTypes: DataTypes): [b
   }
 }
 
-export const deserialize = (schema: IJsSchema, json: any, dataTypes: DataTypes) => {
-  let data = json
+export const deserialize = (json: any, schema: IJsSchema, dataTypes: DataTypes = JsDataTypes) => {
   const deserializer = getDeserialize(schema, dataTypes)
-  if (deserializer) {
-    data = deserializer(schema, json)
-  } else {
+  if (!deserializer) {
     throw new Error(`No deserialize function available for ${schema.type}`)
   }
-  const [valid, msg] = validate(schema, data, dataTypes)
+
+  const data = deserializer(schema, json)
+
+  const [valid, msg] = validate(schema, data)
   if (!valid) {
     throw new Error(msg)
   }
   return data
 }
 
-export const serialize = (schema: IJsSchema, data: any, dataTypes: DataTypes) => {
-  const [valid, msg] = validate(schema, data, dataTypes)
+export const serialize = (data: any, schema?: IJsSchema, dataTypes: DataTypes = JsDataTypes) => {
+  if (!schema) {
+    const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
+    if (metadata) {
+      schema = metadata.schema
+    } else {
+      throw new Error(`No schema found for ${util.inspect(data)}`)
+    }
+  }
+  const [valid, msg] = validate(schema, data)
   if (!valid) {
     throw new Error(msg)
   }
-
   const serializer = getSerialize(schema, dataTypes)
   if (serializer) {
     return serializer(schema, data)
@@ -173,7 +193,7 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
 
   if (typeof schema === 'string') {
     const [type, required] = normalizeType(schema)
-    const jsSchema: any = Object.assign({ type }, extraOptions)
+    const jsSchema: IJsSchema = Object.assign({ type }, extraOptions)
     return [jsSchema, required]
   } else if (Array.isArray(schema)) {
     const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
