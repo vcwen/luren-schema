@@ -331,5 +331,5 @@ export const createJsDataTypes = () => {
   return jsDataTypes
 }
 
-const JsDataTypes = createJsDataTypes()
+export const JsDataTypes = createJsDataTypes()
 export default JsDataTypes
