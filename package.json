@@ -8,6 +8,7 @@
   "author": "Vincent Wen <wenwei1202@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "ajv": "^6.10.2",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.11",
     "reflect-metadata": "^0.1.13"

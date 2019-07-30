@@ -4,44 +4,29 @@ export interface IJsonSchema {
   type?: string
   format?: string
   properties?: { [prop: string]: IJsonSchema }
-  items?: IJsonSchema
+  items?: IJsonSchema | IJsonSchema[]
   required?: string[]
   description?: string
   default?: any
   [prop: string]: any
 }
 
-export interface IDataSchema {
+export interface IJsSchema {
   type: string
   format?: string
-  properties?: { [prop: string]: IDataSchema }
-  items?: IDataSchema
+  properties?: { [prop: string]: IJsSchema }
+  items?: IJsSchema | IJsSchema[]
   required?: string[]
   description?: string
   default?: any
   additionalProperties?: boolean
-  classConstructor?: Constructor<any>
-  [prop: string]: any
-  toJsonSchema?: () => IJsonSchema
-}
-export interface IJsSchema extends IDataSchema {
   private?: boolean
   virtual?: boolean
-  properties?: { [prop: string]: IJsSchema }
-  items?: IJsSchema
-}
-
-// tslint:disable-next-line: no-empty-interface
-export interface IPersistSchema extends IDataSchema {
-  properties?: { [prop: string]: IPersistSchema }
-  items?: IPersistSchema
-}
-
-export interface ITypeOptions {
-  validate: (schema: IDataSchema, data: any) => [boolean, string]
-  serialize: (schema: IDataSchema, data: any) => any
-  deserialize: (schema: IDataSchema, data: any) => any
-  toJsonSchema: () => IJsonSchema
+  classConstructor?: Constructor<any>
+  pattern?: string
+  minLength?: number
+  maxLength?: number
+  [prop: string]: any
 }
 
 export type SimpleType =

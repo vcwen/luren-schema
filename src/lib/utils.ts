@@ -1,45 +1,13 @@
 import _ from 'lodash'
-import util from 'util'
 import { MetadataKey } from '../constants/MetadataKey'
 import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
-import { Constructor, IDataSchema, IJsonSchema, IJsSchema, IPersistSchema } from '../types'
-import { DataTypes } from './DataTypes'
-import JsDataTypes from './JsDataTypes'
+import { Constructor, IJsonSchema, IJsSchema } from '../types'
+import DataTypes from './DataTypes'
+import { IJsTypeOptions } from './JsType'
 
 export const isPrimitive = (value: any) => {
   return (typeof value !== 'object' && typeof value !== 'function') || value === null
-}
-export const getValidate = (
-  schema: IJsSchema,
-  dataTypes: DataTypes
-): ((schema: IJsSchema, data: any) => [boolean, string]) | undefined => {
-  const type = schema.type
-  const typeOptions = dataTypes.get(type)
-  if (typeOptions) {
-    return typeOptions.validate
-  }
-}
-export const getSerialize = (
-  schema: IJsSchema,
-  dataTypes: DataTypes
-): ((schema: IJsSchema, data: any) => any) | undefined => {
-  const type = schema.type
-  const typeOptions = dataTypes.get(type)
-  if (typeOptions) {
-    return typeOptions.serialize
-  }
-}
-
-export const getDeserialize = (
-  schema: IJsSchema,
-  dataTypes: DataTypes
-): ((schema: IJsSchema, data: any) => any) | undefined => {
-  const type = schema.type
-  const typeOptions = dataTypes.get(type)
-  if (typeOptions) {
-    return typeOptions.deserialize
-  }
 }
 
 export const defineSchema = (
@@ -54,57 +22,32 @@ export const defineSchema = (
   }
 }
 
-export const validate = (data: any, schema?: IJsSchema, dataTypes: DataTypes = JsDataTypes): [boolean, string] => {
-  if (!schema) {
-    const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
-    if (metadata) {
-      schema = metadata.schema
-    } else {
-      throw new Error(`No schema found for ${util.inspect(data)}`)
-    }
-  }
-  const validator = getValidate(schema, dataTypes)
-  if (validator) {
-    return validator(schema, data)
+export const getJsSchema = (data: object) => {
+  const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
+  if (metadata) {
+    return metadata.schema
   } else {
-    throw new Error(`No validate function available for ${schema.type}`)
+    return undefined
   }
 }
+export const validate = (data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] => {
+  const jsType = DataTypes.get(schema.type)
+  return jsType.validate(data, schema, options)
+}
 
-export const deserialize = (json: any, schema: IJsSchema, dataTypes: DataTypes = JsDataTypes) => {
-  const deserializer = getDeserialize(schema, dataTypes)
-  if (!deserializer) {
-    throw new Error(`No deserialize function available for ${schema.type}`)
-  }
-
-  const data = deserializer(schema, json)
-
-  const [valid, msg] = validate(schema, data)
+export const serialize = (data: any, schema: IJsSchema, options?: IJsTypeOptions) => {
+  const jsType = DataTypes.get(schema.type)
+  const [valid, msg] = jsType.validate(data, schema, options)
   if (!valid) {
     throw new Error(msg)
   }
+  return jsType.serialize(data, schema)
+}
+
+export const deserialize = (json: any, schema: IJsSchema, options?: IJsTypeOptions) => {
+  const jsType = DataTypes.get(schema.type)
+  const data = jsType.deserialize(json, schema, options)
   return data
-}
-
-export const serialize = (data: any, schema?: IJsSchema, dataTypes: DataTypes = JsDataTypes) => {
-  if (!schema) {
-    const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
-    if (metadata) {
-      schema = metadata.schema
-    } else {
-      throw new Error(`No schema found for ${util.inspect(data)}`)
-    }
-  }
-  const [valid, msg] = validate(schema, data)
-  if (!valid) {
-    throw new Error(msg)
-  }
-  const serializer = getSerialize(schema, dataTypes)
-  if (serializer) {
-    return serializer(schema, data)
-  } else {
-    throw new Error(`No serialize function available for ${schema.type}`)
-  }
 }
 
 const normalizeType = (type: string): [string, boolean] => {
@@ -230,70 +173,23 @@ export const normalizeSimpleSchema = (schema: any) => {
   return convertSimpleSchemaToJsSchema(schema)
 }
 
-export const toJsonSchema = <T extends IDataSchema>(
-  schema: T,
-  dataTypes: DataTypes,
-  propertiesHandler?: (properties: { [prop: string]: T }) => { [prop: string]: T }
-) => {
-  let jsonSchema: IJsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
+export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
+  const jsonSchema: IJsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
   if (jsonSchema) {
     return jsonSchema
   }
   if (schema.toJsonSchema) {
     return schema.toJsonSchema()
   }
-  const jsSchema = schema
-  const typeOptions = dataTypes.get(schema.type)
-
-  if (typeOptions) {
-    jsonSchema = typeOptions.toJsonSchema()
-  } else {
-    jsonSchema = { type: jsSchema.type }
-  }
-
-  if (jsSchema.items) {
-    jsonSchema.items = toJsonSchema(jsSchema.items as T, dataTypes, propertiesHandler)
-  }
-  let properties = schema.properties
-  if (properties) {
-    jsonSchema.properties = {}
-    if (propertiesHandler) {
-      properties = propertiesHandler(properties as any)
-    }
-    const props = Object.getOwnPropertyNames(properties)
-    for (const prop of props) {
-      const propSchema = properties[prop]
-      jsonSchema.properties[prop] = toJsonSchema(propSchema as T, dataTypes, propertiesHandler)
-    }
-  }
-  const propNames = Object.getOwnPropertyNames(jsSchema).filter(
-    (prop) => !['type', 'items', 'properties'].includes(prop)
-  )
-  for (const prop of propNames) {
-    const val = Reflect.get(jsSchema, prop)
-    if (val !== undefined && typeof val !== 'function') {
-      Reflect.set(jsonSchema, prop, val)
-    }
-  }
-  Reflect.defineMetadata(UtilMetadataKey.JSON_SCHEMA, jsonSchema, schema)
-  return jsonSchema
+  const jsType = DataTypes.get(schema.type)
+  return jsType.toJsonSchema(schema)
 }
 
-export const jsSchemaToJsonSchema = (schema: IJsSchema, dataTypes: DataTypes) => {
-  return toJsonSchema<IJsSchema>(schema, dataTypes, (properties) => {
-    const filteredProperties = {}
-    const props = Object.getOwnPropertyNames(properties)
-    for (const prop of props) {
-      const propSchema = properties[prop]
-      if (propSchema.private) {
-        continue
-      }
-      Reflect.set(filteredProperties, prop, Reflect.get(properties, prop))
+export const copyProperties = (source: object, target: object, props: string[]) => {
+  for (const prop of props) {
+    const value = Reflect.get(source, prop)
+    if (value !== undefined) {
+      Reflect.set(target, prop, value)
     }
-    return filteredProperties
-  })
-}
-
-export const persistSchemaToJsonSchema = (schema: IPersistSchema, dataTypes: DataTypes) => {
-  return toJsonSchema(schema, dataTypes)
+  }
 }
