@@ -287,7 +287,7 @@ export class ArrayType implements IJsType {
           } else {
             const itemSchema = schema.items
             if (itemSchema) {
-              return value.map((item) => deserialize(itemSchema, item, options))
+              return value.map((item) => deserialize(item, itemSchema, options))
             }
           }
         } else {
@@ -426,7 +426,7 @@ export class ObjectType implements IJsType {
             }
           }
           let value = Reflect.get(data, prop)
-          value = deserialize(propSchema, value, options)
+          value = deserialize(value, propSchema, options)
           if (value === undefined) {
             continue
           }
