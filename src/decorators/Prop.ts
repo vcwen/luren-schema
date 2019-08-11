@@ -1,7 +1,7 @@
 import { Map } from 'immutable'
 import 'reflect-metadata'
 import { MetadataKey } from '../constants/MetadataKey'
-import { normalizeSimpleSchema } from '../lib/utils'
+import { convertSimpleSchemaToJsSchema } from '../lib/utils'
 import { IJsSchema, SimpleType } from '../types'
 
 export interface IPropOptions {
@@ -41,7 +41,7 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
   if (options.schema) {
     metadata.schema = options.schema
   } else {
-    const [propSchema, propRequired] = normalizeSimpleSchema(options.type || 'string')
+    const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(options.type || 'string')
     metadata.schema = propSchema
     if (options.required === undefined) {
       metadata.required = propRequired

@@ -34,9 +34,7 @@ export function Schema(options: ISchemaOptions = {}) {
     const properties = {} as any
     const requiredProps: string[] = []
     for (const [prop, propMetadata] of propMetadataMap) {
-      properties[prop] = Object.assign({}, propMetadata.schema, {
-        name: propMetadata.name
-      })
+      properties[prop] = Object.assign({}, propMetadata.schema)
       if (propMetadata.required) {
         requiredProps.push(prop)
       }

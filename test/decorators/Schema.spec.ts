@@ -19,11 +19,9 @@ describe('Schema', () => {
           classConstructor: expect.any(Function),
           properties: {
             name: expect.objectContaining({
-              name: 'name',
               type: 'string'
             }),
             age: expect.objectContaining({
-              name: 'age',
               type: 'number'
             })
           },
