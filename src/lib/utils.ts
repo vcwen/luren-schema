@@ -1,29 +1,18 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
-import UtilMetadataKey from '../constants/UtilMetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsonSchema, IJsSchema } from '../types'
 import DataTypes from './DataTypes'
 import { IJsTypeOptions } from './JsType'
 
-export const isPrimitive = (value: any) => {
-  return (typeof value !== 'object' && typeof value !== 'function') || value === null
+export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
+  const metadata = new SchemaMetadata(target.name, schema)
+  Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, target.prototype)
 }
 
-export const defineSchema = (
-  constructor: Constructor<any>,
-  schema: IJsSchema,
-  simpleSchemaResolver?: (simpleSchema: any) => IJsSchema | undefined
-) => {
-  const metadata = new SchemaMetadata(constructor.name, schema)
-  Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
-  if (simpleSchemaResolver) {
-    Reflect.defineMetadata(MetadataKey.SIMPLE_SCHEMA_RESOLVER, simpleSchemaResolver, constructor.prototype)
-  }
-}
-
-export const getJsSchema = (data: object) => {
-  const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, data)
+export const getJsSchema = (target: object | Constructor) => {
+  const targetObj = typeof target === 'object' ? Reflect.getPrototypeOf(target) : target.prototype
+  const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, targetObj)
   if (metadata) {
     return metadata.schema
   } else {
@@ -41,7 +30,7 @@ export const serialize = (data: any, schema: IJsSchema, options?: IJsTypeOptions
   if (!valid) {
     throw new Error(msg)
   }
-  return jsType.serialize(data, schema)
+  return jsType.serialize(data, schema, options)
 }
 
 export const deserialize = (json: any, schema: IJsSchema, options?: IJsTypeOptions) => {
@@ -83,18 +72,7 @@ const normalizeProp = (decoratedProp: string): [string, boolean] => {
 }
 
 export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean] => {
-  if (typeof schema === 'object' && !Array.isArray(schema)) {
-    const resolver: (simpleSchema: any) => IJsSchema | undefined = Reflect.getMetadata(
-      MetadataKey.SIMPLE_SCHEMA_RESOLVER,
-      schema
-    )
-    if (resolver) {
-      const jsSchema = resolver(schema)
-      if (jsSchema) {
-        return [jsSchema, true]
-      }
-    }
-  } else if (typeof schema === 'function') {
+  if (typeof schema === 'function') {
     const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema.prototype)
     if (schemaMetadata) {
       return [schemaMetadata.schema, true]
@@ -146,18 +124,20 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
     }
     return [propSchema, true]
   } else if (typeof schema === 'object') {
-    const jsSchema: IJsSchema = { type: 'object', properties: {} } as any
+    const jsSchema: IJsSchema = { type: 'object' }
+    const properties: { [key: string]: IJsSchema } = {}
     const requiredProps = [] as string[]
     const props = Object.getOwnPropertyNames(schema)
     for (const prop of props) {
       const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(schema[prop])
       const [propName, required] = normalizeProp(prop)
-      if (jsSchema.properties) {
-        jsSchema.properties[propName] = propSchema
-      }
+      properties[propName] = propSchema
       if (required && propRequired) {
         requiredProps.push(propName)
       }
+    }
+    if (!_.isEmpty(properties)) {
+      jsSchema.properties = properties
     }
     if (!_.isEmpty(requiredProps)) {
       jsSchema.required = requiredProps
@@ -169,12 +149,8 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
   }
 }
 
-export const normalizeSimpleSchema = (schema: any) => {
-  return convertSimpleSchemaToJsSchema(schema)
-}
-
 export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
-  const jsonSchema: IJsonSchema = Reflect.getMetadata(UtilMetadataKey.JSON_SCHEMA, schema)
+  const jsonSchema: IJsonSchema = Reflect.getMetadata(MetadataKey.JSON_SCHEMA, schema)
   if (jsonSchema) {
     return jsonSchema
   }
@@ -185,11 +161,61 @@ export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
   return jsType.toJsonSchema(schema)
 }
 
-export const copyProperties = (source: object, target: object, props: string[]) => {
+export const copyProperties = (target: object, source: object, props: string[]) => {
   for (const prop of props) {
     const value = Reflect.get(source, prop)
     if (value !== undefined) {
       Reflect.set(target, prop, value)
     }
+  }
+}
+
+export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptions): string[] => {
+  if (objectSchema.type !== 'object') {
+    throw new Error('getInclusiveProps only works with object schema')
+  }
+  if (options.onlyProps) {
+    return options.onlyProps
+  }
+  const include = options.include || []
+  const exclude = options.exclude || []
+  const includeProps = options.includeProps || []
+  const excludeProps = options.excludeProps || []
+  const properties = objectSchema.properties || {}
+  const allProps = Object.getOwnPropertyNames(properties)
+  let props = allProps.filter((prop) => {
+    const propSchema = properties[prop]
+    return !propSchema.virtual
+  })
+  if (_.isEmpty(options)) {
+    return props
+  }
+  props = props.filter((prop) => {
+    const propSchema = properties[prop]
+    return !exclude.some((item) => {
+      return Reflect.get(propSchema, item)
+    })
+  })
+  props = props.concat(
+    allProps.filter((prop) => {
+      const propSchema = properties[prop]
+      return include.some((item) => {
+        return Reflect.get(propSchema, item)
+      })
+    })
+  )
+  props = _.uniq(props)
+  props = _.difference(props, excludeProps)
+  props = _.uniq(_.union(props, includeProps))
+  props = _.intersection(props, allProps)
+  return props
+}
+
+export const setErrorMessagePrefix = (err: any, prefix: string) => {
+  if (err instanceof Error) {
+    err.message = prefix + err.message
+    return err
+  } else {
+    return prefix + err
   }
 }
