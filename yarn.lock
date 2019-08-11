@@ -338,6 +338,11 @@
   resolved "https://registry.npm.taobao.org/@types/lodash/download/@types/lodash-4.14.130.tgz#04b3a690d5f4fc34579963c99adae067b8c8eb5a"
   integrity sha1-BLOmkNX0/DRXmWPJmtrgZ7jI61o=
 
+"@types/luxon@^1.15.2":
+  version "1.15.2"
+  resolved "https://registry.npm.taobao.org/@types/luxon/download/@types/luxon-1.15.2.tgz#528f11f7d6dc08cec0445d4bea8065a5bb6989b2"
+  integrity sha1-Uo8R99bcCM7ARF1L6oBlpbtpibI=
+
 "@types/node@^11.13.8":
   version "11.13.8"
   resolved "https://registry.npm.taobao.org/@types/node/download/@types/node-11.13.8.tgz#e5d71173c95533be9842b2c798978f095f912aab"
@@ -2244,6 +2249,11 @@ loose-envify@^1.0.0:
   integrity sha1-ce5R+nvkyuwaY4OffmgtgTLTDK8=
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
+
+luxon@^1.17.2:
+  version "1.17.2"
+  resolved "https://registry.npm.taobao.org/luxon/download/luxon-1.17.2.tgz#95189c450341cfddf5f826ef8c32b5b022943fd5"
+  integrity sha1-lRicRQNBz931+CbvjDK1sCKUP9U=
 
 make-dir@^2.1.0:
   version "2.1.0"

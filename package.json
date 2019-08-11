@@ -11,11 +11,13 @@
     "ajv": "^6.10.2",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.11",
+    "luxon": "^1.17.2",
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
     "@types/jest": "^24.0.12",
     "@types/lodash": "^4.14.130",
+    "@types/luxon": "^1.15.2",
     "@types/node": "^11.13.8",
     "jest": "^24.7.1",
     "mongodb": "^3.2.3",
