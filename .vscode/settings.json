@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
         "deserialize"
-    ]
+    ],
+    "search.followSymlinks": false
 }
