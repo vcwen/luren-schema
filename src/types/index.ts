@@ -1,31 +1,44 @@
 export type Constructor<T = any> = new (...args: any[]) => T
 
-export interface IJsonSchema {
-  type?: string
-  format?: string
-  properties?: { [prop: string]: IJsonSchema }
-  items?: IJsonSchema | IJsonSchema[]
-  required?: string[]
+export interface ICommonSchemaOptions {
+  title?: string
   description?: string
   default?: any
+  examples?: any
+  enum?: any[]
+  const?: any
+  format?: string
+  multipleOf?: number
+  minimum?: number
+  exclusiveMinimum?: number
+  maximum?: number
+  exclusiveMaximum?: number
+  minItems?: number
+  maxItems?: number
+  minLength?: number
+  maxLength?: number
+  uniqueItems?: boolean
+  additionalItems?: boolean
+  additionalProperties?: boolean
+}
+export interface IJsonSchema extends ICommonSchemaOptions {
+  type?: string
+  pattern?: string
+  required?: string[]
+  properties?: { [prop: string]: IJsonSchema }
+  items?: IJsonSchema | IJsonSchema[]
   [prop: string]: any
 }
 
 export interface IJsSchema {
   type: string
-  format?: string
+  pattern?: RegExp
   properties?: { [prop: string]: IJsSchema }
   items?: IJsSchema | IJsSchema[]
-  required?: string[]
-  description?: string
-  default?: any
-  additionalProperties?: boolean
   private?: boolean
   virtual?: boolean
+  required?: string[]
   classConstructor?: Constructor<any>
-  pattern?: string
-  minLength?: number
-  maxLength?: number
   [prop: string]: any
 }
 

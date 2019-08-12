@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
-import { Constructor, IJsonSchema, IJsSchema } from '../types'
+import { Constructor, IJsSchema } from '../types'
 import DataTypes from './DataTypes'
 import { IJsTypeOptions } from './JsType'
 
@@ -26,10 +26,6 @@ export const validate = (data: any, schema: IJsSchema, options?: IJsTypeOptions)
 
 export const serialize = (data: any, schema: IJsSchema, options?: IJsTypeOptions) => {
   const jsType = DataTypes.get(schema.type)
-  const [valid, msg] = jsType.validate(data, schema, options)
-  if (!valid) {
-    throw new Error(msg)
-  }
   return jsType.serialize(data, schema, options)
 }
 
@@ -150,13 +146,6 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
 }
 
 export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
-  const jsonSchema: IJsonSchema = Reflect.getMetadata(MetadataKey.JSON_SCHEMA, schema)
-  if (jsonSchema) {
-    return jsonSchema
-  }
-  if (schema.toJsonSchema) {
-    return schema.toJsonSchema()
-  }
   const jsType = DataTypes.get(schema.type)
   return jsType.toJsonSchema(schema)
 }
@@ -168,6 +157,7 @@ export const copyProperties = (target: object, source: object, props: string[]) 
       Reflect.set(target, prop, value)
     }
   }
+  return target
 }
 
 export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptions): string[] => {

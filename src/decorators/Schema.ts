@@ -1,23 +1,22 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
 import 'reflect-metadata'
+import { ALL_JS_SCHEMA_PROPS } from '../constants'
 import { MetadataKey } from '../constants/MetadataKey'
-import { Constructor, IJsSchema } from '../types'
+import { copyProperties } from '../lib/utils'
+import { Constructor, ICommonSchemaOptions, IJsSchema } from '../types'
 import { PropMetadata } from './Prop'
 
-export interface ISchemaOptions {
-  id?: string
-  private?: boolean
-  additionalProps?: boolean
+export interface ISchemaOptions extends ICommonSchemaOptions {
   desc?: string
 }
 
 export class SchemaMetadata {
-  public id: string
+  public name: string
   public schema: IJsSchema
   public desc?: string
-  constructor(id: string, schema: any, desc?: string) {
-    this.id = id
+  constructor(name: string, schema: any, desc?: string) {
+    this.name = name
     this.schema = schema
     this.desc = desc
   }
@@ -45,14 +44,9 @@ export function Schema(options: ISchemaOptions = {}) {
     if (!_.isEmpty(requiredProps)) {
       jsSchema.required = requiredProps
     }
-    if (options.private) {
-      jsSchema.private = true
-    }
-    if (options.additionalProps) {
-      jsSchema.additionalProperties = true
-    }
 
-    const metadata = new SchemaMetadata(options.id || constructor.name, jsSchema, options.desc)
+    const metadata = new SchemaMetadata(constructor.name, jsSchema, options.desc)
+    copyProperties(metadata.schema, options, ALL_JS_SCHEMA_PROPS)
     Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
   }
 }

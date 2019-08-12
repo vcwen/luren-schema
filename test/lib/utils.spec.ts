@@ -33,6 +33,14 @@ describe('utils', () => {
         required: ['name']
       })
     })
+    it('should return undefined if no schema is defined', () => {
+      class Person {
+        public name!: string
+      }
+      const person = new Person()
+      const schema = utils.getJsSchema(person)
+      expect(schema).toBeUndefined()
+    })
   })
   describe('defineJsSchema', () => {
     it('should define JsSchema on class', () => {
@@ -67,20 +75,36 @@ describe('utils', () => {
       const schema9 = utils.convertSimpleSchemaToJsSchema({
         name: 'string?',
         age: 'number',
-        email: ['string', { format: 'email' }]
+        email: ['string', { format: 'email' }],
+        'address?': { detail: 'string' }
       })
       expect(schema9).toEqual([
         {
           type: 'object',
-          properties: { name: { type: 'string' }, age: { type: 'number' }, email: { type: 'string', format: 'email' } },
+          properties: {
+            name: { type: 'string' },
+            age: { type: 'number' },
+            email: { type: 'string', format: 'email' },
+            address: {
+              type: 'object',
+              properties: { detail: { type: 'string' } },
+              required: ['detail']
+            }
+          },
           required: ['age', 'email']
         },
         true
       ])
       const schema10 = utils.convertSimpleSchemaToJsSchema([{}, { additionalProps: true }])
       expect(schema10).toEqual([{ type: 'object', additionalProps: true }, true])
+      expect(() => {
+        utils.convertSimpleSchemaToJsSchema({ 'name+': 'string' })
+      }).toThrowError()
+      expect(() => {
+        utils.convertSimpleSchemaToJsSchema({ name: 'string+' })
+      }).toThrowError()
     })
-    it('should convert type class', () => {
+    it('should convert type primitive type class', () => {
       const schema1 = utils.convertSimpleSchemaToJsSchema(String)
       expect(schema1).toEqual([{ type: 'string' }, true])
       const schema2 = utils.convertSimpleSchemaToJsSchema(Boolean)
@@ -93,6 +117,25 @@ describe('utils', () => {
       expect(schema5).toEqual([{ type: 'object' }, true])
       const schema6 = utils.convertSimpleSchemaToJsSchema(Array)
       expect(schema6).toEqual([{ type: 'array' }, true])
+      const schema7 = utils.convertSimpleSchemaToJsSchema(Array)
+      expect(schema7).toEqual([{ type: 'array' }, true])
+      class Person {}
+      expect(() => {
+        utils.convertSimpleSchemaToJsSchema(Person)
+      }).toThrowError()
+      expect(() => {
+        utils.convertSimpleSchemaToJsSchema(1)
+      }).toThrowError()
+      @Schema()
+      class Foo {
+        @Prop()
+        public bar!: string
+      }
+      const schema8 = utils.convertSimpleSchemaToJsSchema(Foo)
+      expect(schema8).toEqual([
+        { type: 'object', classConstructor: Foo, properties: { bar: { type: 'string' } }, required: ['bar'] },
+        true
+      ])
     })
   })
   describe('toJsonSchema', () => {
@@ -137,18 +180,18 @@ describe('utils', () => {
   })
   describe('getInclusiveProps', () => {
     it('should return included props ', () => {
-      const props = utils.getInclusiveProps(
-        {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            foo: { type: 'number', private: true },
-            fullName: { type: 'string', virtual: true }
-          }
-        },
-        { include: ['private'] }
-      )
-      expect(props).toEqual(['name', 'foo'])
+      const schema = {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          foo: { type: 'number', private: true },
+          fullName: { type: 'string', virtual: true }
+        }
+      }
+      expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
+      expect(utils.getInclusiveProps(schema, { exclude: ['private'] })).toEqual(['name'])
+      expect(utils.getInclusiveProps(schema, { onlyProps: ['fullName'] })).toEqual(['fullName'])
+      expect(utils.getInclusiveProps(schema, {})).toEqual(['name', 'foo'])
     })
     it("should return empty array if there's no props", () => {
       const props = utils.getInclusiveProps(
@@ -158,6 +201,11 @@ describe('utils', () => {
         { include: ['private', 'virtual'] }
       )
       expect(props).toEqual([])
+    })
+    it('should throw error if schema type is not object', () => {
+      expect(() => {
+        utils.getInclusiveProps({ type: 'array' }, { exclude: ['private'] })
+      }).toThrowError()
     })
   })
   describe('setErrorMessagePrefix', () => {

@@ -13,7 +13,7 @@ describe('Schema', () => {
     const metadata = Reflect.getMetadata(MetadataKey.SCHEMA, Test.prototype)
     expect(metadata).toEqual(
       expect.objectContaining({
-        id: 'Test',
+        name: 'Test',
         schema: expect.objectContaining({
           type: 'object',
           classConstructor: expect.any(Function),
@@ -26,6 +26,25 @@ describe('Schema', () => {
             })
           },
           required: ['name']
+        })
+      })
+    )
+  })
+  it('should build schema with props', () => {
+    // tslint:disable-next-line: max-classes-per-file
+    @Schema({ additionalProperties: true })
+    class Test {
+      public name!: string
+      public age?: number
+    }
+    const metadata = Reflect.getMetadata(MetadataKey.SCHEMA, Test.prototype)
+    expect(metadata).toEqual(
+      expect.objectContaining({
+        name: 'Test',
+        schema: expect.objectContaining({
+          type: 'object',
+          classConstructor: expect.any(Function),
+          additionalProperties: true
         })
       })
     )

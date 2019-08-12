@@ -1,0 +1,23 @@
+export const ALL_JS_SCHEMA_PROPS = [
+  'title',
+  'description',
+  'default',
+  'examples',
+  'enum',
+  'const',
+  'format',
+  'pattern',
+  'multipleOf',
+  'minimum',
+  'exclusiveMinimum',
+  'maximum',
+  'exclusiveMaximum',
+  'items',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'additionalItems',
+  'properties',
+  'required',
+  'additionalProperties'
+]

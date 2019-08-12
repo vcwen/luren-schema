@@ -15,9 +15,7 @@ describe('Prop', () => {
       expect.objectContaining({
         name: 'name',
         required: true,
-        schema: expect.objectContaining({ type: 'string' }),
-        strict: false,
-        private: false
+        schema: expect.objectContaining({ type: 'string' })
       })
     )
   })
@@ -27,6 +25,8 @@ describe('Prop', () => {
     class TestController {
       @Prop({ required: true, type: 'number' })
       public name!: string
+      @Prop({ private: true })
+      public password!: string
     }
     const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
     expect(props.get('name')).toEqual(
@@ -34,9 +34,30 @@ describe('Prop', () => {
         required: true,
         schema: expect.objectContaining({
           type: 'number'
-        }),
-        strict: false,
-        private: false
+        })
+      })
+    )
+    expect(props.get('password')).toEqual(
+      expect.objectContaining({
+        required: true,
+        schema: {
+          type: 'string',
+          private: true
+        }
+      })
+    )
+  })
+  it('should use the external schema  when schema  is set in options', () => {
+    // tslint:disable-next-line:max-classes-per-file
+    class TestController {
+      @Prop({ required: true, virtual: true, schema: { type: 'string', format: 'date' } })
+      public name!: string
+    }
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
+    expect(props.get('name')).toEqual(
+      expect.objectContaining({
+        required: true,
+        schema: { type: 'string', format: 'date', virtual: true }
       })
     )
   })
