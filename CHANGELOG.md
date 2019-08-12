@@ -1,42 +1,14 @@
-# Changelog
+# Change Log
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [0.0.35](https://github.com/vcwen/luren-schema/compare/v0.0.34...v0.0.35) (2019-08-07)
+<a name="0.0.36"></a>
+## [0.0.36](https://github.com/vcwen/luren-schema/compare/v0.0.33...v0.0.36) (2019-08-12)
 
 
 ### Bug Fixes
 
 * **JsType:** fix deserialize ([e5601d6](https://github.com/vcwen/luren-schema/commit/e5601d6))
-
-
-
-### [0.0.34](https://github.com/vcwen/luren-schema/compare/v0.0.33...v0.0.34) (2019-08-07)
-
-
-
-### [0.0.33](https://github.com/vcwen/luren-schema/compare/v0.0.32...v0.0.33) (2019-07-29)
-
-
-### Bug Fixes
-
-* **export:** explictly export rather than export default ([e5a07fc](https://github.com/vcwen/luren-schema/commit/e5a07fc))
-
-
-
-### [0.0.32](https://github.com/vcwen/luren-schema/compare/v0.0.31...v0.0.32) (2019-07-29)
-
-
-
-### [0.0.31](https://github.com/vcwen/luren-schema/compare/v0.0.30...v0.0.31) (2019-07-29)
-
-
-
-### [0.0.30](https://github.com/vcwen/luren-schema/compare/v0.0.29...v0.0.30) (2019-07-29)
-
-
-
-### [0.0.29](https://github.com/vcwen/luren-schema/compare/v0.0.28...v0.0.29) (2019-07-29)
 
 
 
