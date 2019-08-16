@@ -32,7 +32,7 @@ export interface IJsonSchema extends ICommonSchemaOptions {
 
 export interface IJsSchema {
   type: string
-  pattern?: RegExp
+  pattern?: string
   properties?: { [prop: string]: IJsSchema }
   items?: IJsSchema | IJsSchema[]
   private?: boolean
