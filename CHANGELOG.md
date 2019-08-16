@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.37"></a>
+## [0.0.37](https://github.com/vcwen/luren-schema/compare/v0.0.36...v0.0.37) (2019-08-16)
+
+
+### Bug Fixes
+
+* **JsSchema:** pattern use string type ([fab8236](https://github.com/vcwen/luren-schema/commit/fab8236))
+* **ObjectType:** using validate instead of json schema validation in serialize ([710ee52](https://github.com/vcwen/luren-schema/commit/710ee52))
+
+
+
 <a name="0.0.36"></a>
 ## [0.0.36](https://github.com/vcwen/luren-schema/compare/v0.0.33...v0.0.36) (2019-08-12)
 
