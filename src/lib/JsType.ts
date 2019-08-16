@@ -392,10 +392,9 @@ export class ObjectType extends JsType {
         return
       }
     }
-    const jsonSchema = this.toJsonSchema(schema)
-    const valid = ajv.validate(jsonSchema, data) as boolean
+    const [valid, msg] = this.validate(data, schema, options)
     if (!valid) {
-      throw new Error(ajv.errorsText())
+      throw new Error(msg)
     }
 
     const properties = schema.properties
