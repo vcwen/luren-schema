@@ -1,6 +1,7 @@
 import Ajv = require('ajv')
 import _ from 'lodash'
 import { DateTime } from 'luxon'
+import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
 import { IJsonSchema, IJsSchema } from '../types'
 import DataTypes from './DataTypes'
 import { copyProperties, deserialize, getInclusiveProps, serialize, validate } from './utils'
@@ -346,19 +347,24 @@ export class ArrayType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ObjectType extends JsType {
   public type: string = 'object'
-  public toJsonSchema(schema: IJsSchema) {
+  public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'object' }
+    options = options || {}
     const properties = schema.properties
+    const props = getInclusiveProps(schema, options)
     if (properties && !_.isEmpty(properties)) {
       jsonSchema.properties = {}
-      for (const prop of Object.getOwnPropertyNames(properties)) {
+      for (const prop of props) {
         const propSchema = properties[prop]
         const jsType = DataTypes.get(propSchema.type)
         Reflect.set(jsonSchema.properties, prop, jsType.toJsonSchema(propSchema))
       }
     }
-    const allProps = allJsonSchemaProps.filter((item) => item !== 'properties')
-    copyProperties(jsonSchema, schema, allProps)
+    if (schema.required && !_.isEmpty(schema.required)) {
+      const required = _.intersection(schema.required, props)
+      jsonSchema.required = required
+    }
+    copyProperties(jsonSchema, schema, ALL_COMMON_SCHEMA_PROPS)
     return jsonSchema
   }
   public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
@@ -435,7 +441,7 @@ export class ObjectType extends JsType {
         return
       }
     }
-    const jsonSchema = this.toJsonSchema(schema)
+    const jsonSchema = this.toJsonSchema(schema, options)
     const valid = ajv.validate(jsonSchema, data) as boolean
     if (!valid) {
       throw new Error(ajv.errorsText())

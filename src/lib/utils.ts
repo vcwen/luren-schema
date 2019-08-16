@@ -164,6 +164,9 @@ export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptio
   if (objectSchema.type !== 'object') {
     throw new Error('getInclusiveProps only works with object schema')
   }
+  if (!objectSchema.properties) {
+    return []
+  }
   if (options.onlyProps) {
     return options.onlyProps
   }
@@ -171,7 +174,7 @@ export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptio
   const exclude = options.exclude || []
   const includeProps = options.includeProps || []
   const excludeProps = options.excludeProps || []
-  const properties = objectSchema.properties || {}
+  const properties = objectSchema.properties
   const allProps = Object.getOwnPropertyNames(properties)
   let props = allProps.filter((prop) => {
     const propSchema = properties[prop]

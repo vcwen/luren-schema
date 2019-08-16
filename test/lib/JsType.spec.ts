@@ -574,29 +574,65 @@ describe('ObjectType', () => {
     })
   })
   describe('toJsonSchema', () => {
-    const jsonSchema1 = objectType.toJsonSchema({
-      type: 'object'
-    })
-    expect(jsonSchema1).toEqual({ type: 'object' })
-    const jsonSchema2 = objectType.toJsonSchema({
-      type: 'object',
-      properties: { foo: { type: 'string' }, bar: { type: 'date' } },
-      required: ['foo']
-    })
-    expect(jsonSchema2).toEqual({
-      type: 'object',
-      properties: { foo: { type: 'string' }, bar: { type: 'string', format: 'date-time' } },
-      required: ['foo']
-    })
-    const jsonSchema3 = objectType.toJsonSchema({
-      type: 'object',
-      properties: { foo: { type: 'string' } },
-      additionalProperties: true
-    })
-    expect(jsonSchema3).toEqual({
-      type: 'object',
-      properties: { foo: { type: 'string' } },
-      additionalProperties: true
+    it('should return json schema', () => {
+      const jsonSchema1 = objectType.toJsonSchema({
+        type: 'object'
+      })
+      expect(jsonSchema1).toEqual({ type: 'object' })
+      const jsonSchema2 = objectType.toJsonSchema({
+        type: 'object',
+        properties: { foo: { type: 'string' }, bar: { type: 'date' } },
+        required: ['foo']
+      })
+      expect(jsonSchema2).toEqual({
+        type: 'object',
+        properties: { foo: { type: 'string' }, bar: { type: 'string', format: 'date-time' } },
+        required: ['foo']
+      })
+      const jsonSchema3 = objectType.toJsonSchema({
+        type: 'object',
+        properties: { foo: { type: 'string' } },
+        additionalProperties: true
+      })
+      expect(jsonSchema3).toEqual({
+        type: 'object',
+        properties: { foo: { type: 'string' } },
+        additionalProperties: true
+      })
+      const jsonSchema4 = objectType.toJsonSchema({
+        type: 'object',
+        properties: {
+          foo: { type: 'string' },
+          bar: { type: 'number', virtual: true }
+        },
+        required: ['foo', 'bar', 'thing'],
+        additionalProperties: true
+      })
+      expect(jsonSchema4).toEqual({
+        type: 'object',
+        properties: { foo: { type: 'string' } },
+        required: ['foo'],
+        additionalProperties: true
+      })
+      const jsonSchema5 = objectType.toJsonSchema(
+        {
+          type: 'object',
+          properties: {
+            foo: { type: 'string' },
+            bar: { type: 'number', virtual: true },
+            thing: { type: 'object', private: true }
+          },
+          required: ['foo', 'bar', 'thing'],
+          additionalProperties: true
+        },
+        { exclude: ['private'], include: ['virtual'] }
+      )
+      expect(jsonSchema5).toEqual({
+        type: 'object',
+        properties: { foo: { type: 'string' }, bar: { type: 'number' } },
+        required: ['foo', 'bar'],
+        additionalProperties: true
+      })
     })
   })
 })
