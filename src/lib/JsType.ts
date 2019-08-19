@@ -15,6 +15,12 @@ export interface IJsTypeOptions {
   excludeProps?: string[]
   onlyProps?: string[]
 }
+
+export interface IJsTypeHelper {
+  validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?]
+  serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions): any
+  deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions): any
+}
 export interface IJsType {
   type: string
   serialize: (value: any, schema: IJsSchema, options?: IJsTypeOptions) => any
@@ -235,6 +241,11 @@ export class DateType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ArrayType extends JsType {
   public type: string = 'array'
+  protected typeHelper?: IJsTypeHelper
+  constructor(typeHelper?: IJsTypeHelper) {
+    super()
+    this.typeHelper = typeHelper
+  }
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'array' }
     const items = schema.items
@@ -265,14 +276,18 @@ export class ArrayType extends JsType {
       if (itemSchema) {
         if (Array.isArray(itemSchema)) {
           for (let i = 0; i < val.length; i++) {
-            const [valid, msg] = validate(val[i], itemSchema[i], options)
+            const [valid, msg] = this.typeHelper
+              ? this.typeHelper.validate(val[i], itemSchema[i], options)
+              : validate(val[i], itemSchema[i], options)
             if (!valid) {
               return [valid, `[${i}]${msg}`]
             }
           }
         } else {
           for (let i = 0; i < val.length; i++) {
-            const [valid, msg] = validate(val[i], itemSchema, options)
+            const [valid, msg] = this.typeHelper
+              ? this.typeHelper.validate(val[i], itemSchema, options)
+              : validate(val[i], itemSchema, options)
             if (!valid) {
               return [valid, `[${i}]:${msg}`]
             }
@@ -297,13 +312,21 @@ export class ArrayType extends JsType {
         if (Array.isArray(schema.items)) {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
-            val.push(serialize(value[i], schema.items[i], options))
+            val.push(
+              this.typeHelper
+                ? this.typeHelper.serialize(value[i], schema.items[i], options)
+                : serialize(value[i], schema.items[i], options)
+            )
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
-            return value.map((item) => serialize(item, itemSchema, options))
+            return value.map((item) =>
+              this.typeHelper
+                ? this.typeHelper.serialize(item, itemSchema, options)
+                : serialize(item, itemSchema, options)
+            )
           }
         }
       } else {
@@ -328,13 +351,21 @@ export class ArrayType extends JsType {
         if (Array.isArray(schema.items)) {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
-            val.push(deserialize(value[i], schema.items[i], options))
+            val.push(
+              this.typeHelper
+                ? this.typeHelper.deserialize(value[i], schema.items[i], options)
+                : deserialize(value[i], schema.items[i], options)
+            )
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
-            return value.map((item) => deserialize(item, itemSchema, options))
+            return value.map((item) =>
+              this.typeHelper
+                ? this.typeHelper.deserialize(item, itemSchema, options)
+                : deserialize(item, itemSchema, options)
+            )
           }
         }
       } else {
@@ -346,6 +377,11 @@ export class ArrayType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ObjectType extends JsType {
   public type: string = 'object'
+  protected typeHelper?: IJsTypeHelper
+  public constructor(typeHelper?: IJsTypeHelper) {
+    super()
+    this.typeHelper = typeHelper
+  }
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'object' }
     options = options || {}
@@ -383,7 +419,9 @@ export class ObjectType extends JsType {
       if (requiredProps.includes(prop) && _.isNil(value)) {
         return [false, `${prop} is required`]
       }
-      const [valid, msg] = validate(value, propSchema, options)
+      const [valid, msg] = this.typeHelper
+        ? this.typeHelper.validate(value, propSchema, options)
+        : validate(value, propSchema, options)
       if (!valid) {
         return [valid, `${prop}:${msg}`]
       }
@@ -410,7 +448,9 @@ export class ObjectType extends JsType {
       for (const prop of props) {
         const propSchema = properties[prop]
         let value = Reflect.get(data, prop)
-        value = serialize(value, propSchema, options)
+        value = this.typeHelper
+          ? this.typeHelper.serialize(value, propSchema, options)
+          : serialize(value, propSchema, options)
         if (_.isNil(value)) {
           continue
         }
@@ -456,7 +496,9 @@ export class ObjectType extends JsType {
           continue
         }
         let value = Reflect.get(data, prop)
-        value = deserialize(value, propSchema, options)
+        value = this.typeHelper
+          ? this.typeHelper.deserialize(value, propSchema, options)
+          : deserialize(value, propSchema, options)
         if (_.isNil(value)) {
           continue
         }
