@@ -153,7 +153,7 @@ export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
 export const copyProperties = (target: object, source: object, props: string[]) => {
   for (const prop of props) {
     const value = Reflect.get(source, prop)
-    if (value !== undefined) {
+    if (!_.isNil(value)) {
       Reflect.set(target, prop, value)
     }
   }

@@ -26,7 +26,7 @@ export interface IJsType {
 export abstract class JsType implements IJsType {
   public abstract type: string
   public validate(value: any, schema: IJsSchema): [boolean, string?] {
-    if (value === undefined) {
+    if (_.isNil(value)) {
       return [true]
     } else {
       const jsonSchema = this.toJsonSchema(schema)
@@ -43,14 +43,14 @@ export abstract class JsType implements IJsType {
     if (!valid) {
       throw new Error(msg)
     }
-    if (value === undefined) {
+    if (_.isNil(value)) {
       return this.getDefaultValue(schema)
     } else {
       return value
     }
   }
   public deserialize(value: any, schema: IJsSchema): any {
-    if (value === undefined) {
+    if (_.isNil(value)) {
       return this.getDefaultValue(schema)
     } else {
       const jsonSchema = this.toJsonSchema(schema)
@@ -68,7 +68,7 @@ export abstract class JsType implements IJsType {
     return jsonSchema
   }
   protected getDefaultValue(schema: IJsSchema) {
-    if (schema.default !== undefined) {
+    if (!_.isNil(schema.default)) {
       const value = schema.default
       const [valid, msg] = this.validate(value, schema)
       if (valid) {
@@ -112,14 +112,14 @@ export class AnyType extends JsType {
     return [true]
   }
   public serialize(val: any, schema: IJsSchema) {
-    if (val === undefined) {
+    if (_.isNil(val)) {
       return schema.default
     } else {
       return val
     }
   }
   public deserialize(val: any, schema: IJsSchema) {
-    if (val === undefined) {
+    if (_.isNil(val)) {
       return schema.default
     } else {
       return val
@@ -156,7 +156,7 @@ export class IntegerType extends JsType {
 export class DateType extends JsType {
   public type: string = 'date'
   public validate(value: any): [boolean, string?] {
-    if (value === undefined) {
+    if (_.isNil(value)) {
       return [true]
     }
     if (value instanceof Date) {
@@ -170,9 +170,9 @@ export class DateType extends JsType {
     if (!valid) {
       throw new Error(msg)
     }
-    if (value === undefined) {
+    if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
-      if (value === undefined) {
+      if (_.isNil(value)) {
         return undefined
       }
     }
@@ -196,7 +196,7 @@ export class DateType extends JsType {
     }
   }
   public deserialize(value: any, schema: IJsSchema) {
-    if (value === undefined) {
+    if (_.isNil(value)) {
       return this.getDefaultValue(schema)
     } else {
       const jsonSchema = this.toJsonSchema(schema)
@@ -257,7 +257,7 @@ export class ArrayType extends JsType {
     return jsonSchema
   }
   public validate(val: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
-    if (val === undefined) {
+    if (_.isNil(val)) {
       return [true]
     }
     if (Array.isArray(val)) {
@@ -285,37 +285,36 @@ export class ArrayType extends JsType {
     }
   }
   public serialize(value: any, schema: IJsSchema, options?: IJsTypeOptions) {
-    const [valid, msg] = this.validate(value, schema)
+    const [valid, msg] = this.validate(value, schema, options)
     if (!valid) {
       throw new Error(msg)
     }
-    if (value === undefined) {
-      return this.getDefaultValue(schema)
-    } else {
-      if (Array.isArray(value)) {
-        if (schema.items) {
-          if (Array.isArray(schema.items)) {
-            const val: any[] = []
-            for (let i = 0; i < value.length; i++) {
-              val.push(serialize(value[i], schema.items[i], options))
-            }
-            return val
-          } else {
-            const itemSchema = schema.items
-            if (itemSchema) {
-              return value.map((item) => serialize(item, itemSchema, options))
-            }
+    if (_.isNil(value)) {
+      value = this.getDefaultValue(schema)
+    }
+    if (Array.isArray(value)) {
+      if (schema.items) {
+        if (Array.isArray(schema.items)) {
+          const val: any[] = []
+          for (let i = 0; i < value.length; i++) {
+            val.push(serialize(value[i], schema.items[i], options))
           }
+          return val
         } else {
-          return value
+          const itemSchema = schema.items
+          if (itemSchema) {
+            return value.map((item) => serialize(item, itemSchema, options))
+          }
         }
+      } else {
+        return value
       }
     }
   }
   public deserialize(value: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
-    if (value === undefined) {
+    if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
-      if (value === undefined) {
+      if (_.isNil(value)) {
         return
       }
     }
@@ -368,11 +367,11 @@ export class ObjectType extends JsType {
     return jsonSchema
   }
   public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
-    if (data === undefined) {
+    if (_.isNil(data)) {
       return [true]
     }
     if (typeof data !== 'object') {
-      return [false, 'Invalid object']
+      return [false, `Invalid object value: ${data}`]
     }
     const properties = schema.properties || {}
     const requiredProps = schema.required || []
@@ -381,7 +380,7 @@ export class ObjectType extends JsType {
     for (const prop of propNames) {
       const propSchema = properties[prop]
       const value = Reflect.get(data, prop)
-      if (requiredProps.includes(prop) && value === undefined) {
+      if (requiredProps.includes(prop) && _.isNil(value)) {
         return [false, `${prop} is required`]
       }
       const [valid, msg] = validate(value, propSchema, options)
@@ -392,9 +391,9 @@ export class ObjectType extends JsType {
     return [true]
   }
   public serialize(data: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
-    if (data === undefined) {
+    if (_.isNil(data)) {
       data = this.getDefaultValue(schema)
-      if (data === undefined) {
+      if (_.isNil(data)) {
         return
       }
     }
@@ -412,7 +411,7 @@ export class ObjectType extends JsType {
         const propSchema = properties[prop]
         let value = Reflect.get(data, prop)
         value = serialize(value, propSchema, options)
-        if (value === undefined) {
+        if (_.isNil(value)) {
           continue
         }
         Reflect.set(json, prop, value)
@@ -422,7 +421,7 @@ export class ObjectType extends JsType {
         for (const dataProp of dataProps) {
           if (!props.includes(dataProp)) {
             const value = Reflect.get(data, dataProp)
-            if (value === undefined) {
+            if (_.isNil(value)) {
               continue
             }
             Reflect.set(json, dataProp, value)
@@ -435,9 +434,9 @@ export class ObjectType extends JsType {
     return json
   }
   public deserialize(data: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
-    if (data === undefined) {
+    if (_.isNil(data)) {
       data = this.getDefaultValue(schema)
-      if (data === undefined) {
+      if (_.isNil(data)) {
         return
       }
     }
@@ -458,7 +457,7 @@ export class ObjectType extends JsType {
         }
         let value = Reflect.get(data, prop)
         value = deserialize(value, propSchema, options)
-        if (value === undefined) {
+        if (_.isNil(value)) {
           continue
         }
         Reflect.set(obj, prop, value)
@@ -468,7 +467,7 @@ export class ObjectType extends JsType {
         for (const dataProp of dataProps) {
           if (!propNames.includes(dataProp)) {
             const value = Reflect.get(data, dataProp)
-            if (value === undefined) {
+            if (_.isNil(value)) {
               continue
             }
             Reflect.set(obj, dataProp, value)
