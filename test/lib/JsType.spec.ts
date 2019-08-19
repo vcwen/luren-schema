@@ -432,10 +432,10 @@ describe('ObjectType', () => {
           },
           {
             type: 'object',
-            properties: { foo: { type: 'number' }, bar: { type: 'boolean', virtual: true }, other: { type: 'string' } }
+            properties: { foo: { type: 'number' }, bar: { type: 'boolean', readonly: true }, other: { type: 'string' } }
           }
         )
-      ).toEqual({ foo: 1 })
+      ).toEqual({ foo: 1, bar: true })
       expect(
         objectType.serialize(
           { foo: 1, bar: true },
@@ -528,7 +528,7 @@ describe('ObjectType', () => {
         },
         {
           type: 'object',
-          properties: { foo: { type: 'number' }, bar: { type: 'boolean', virtual: true }, other: { type: 'string' } }
+          properties: { foo: { type: 'number' }, bar: { type: 'boolean', readonly: true }, other: { type: 'string' } }
         }
       )
       expect(val1).toEqual({ foo: 1 })
@@ -610,8 +610,8 @@ describe('ObjectType', () => {
       })
       expect(jsonSchema4).toEqual({
         type: 'object',
-        properties: { foo: { type: 'string' } },
-        required: ['foo'],
+        properties: { foo: { type: 'string' }, bar: { type: 'number' } },
+        required: ['foo', 'bar'],
         additionalProperties: true
       })
       const jsonSchema5 = objectType.toJsonSchema(

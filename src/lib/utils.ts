@@ -160,12 +160,36 @@ export const copyProperties = (target: object, source: object, props: string[]) 
   return target
 }
 
-export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptions): string[] => {
+const SCHEMA_PROPERTIES_PRIORITY = {
+  private: 1,
+  virtual: 2,
+  readonly: 2
+}
+
+const getSchemaPropPriority = (prop: string) => {
+  switch (prop) {
+    case 'private':
+      return SCHEMA_PROPERTIES_PRIORITY[prop]
+    case 'virtual':
+      return SCHEMA_PROPERTIES_PRIORITY[prop]
+    case 'readonly':
+      return SCHEMA_PROPERTIES_PRIORITY[prop]
+    default:
+      throw new Error(`Unknown schema prop:${prop}`)
+  }
+}
+
+export const getInclusiveProps = (objectSchema: IJsSchema, options?: IJsTypeOptions): string[] => {
   if (objectSchema.type !== 'object') {
     throw new Error('getInclusiveProps only works with object schema')
   }
-  if (!objectSchema.properties) {
+  if (!objectSchema.properties || _.isEmpty(objectSchema.properties)) {
     return []
+  }
+  const properties = objectSchema.properties
+  const allProps = Object.getOwnPropertyNames(properties)
+  if (!options || _.isEmpty(options)) {
+    return allProps
   }
   if (options.onlyProps) {
     return options.onlyProps
@@ -174,30 +198,36 @@ export const getInclusiveProps = (objectSchema: IJsSchema, options: IJsTypeOptio
   const exclude = options.exclude || []
   const includeProps = options.includeProps || []
   const excludeProps = options.excludeProps || []
-  const properties = objectSchema.properties
-  const allProps = Object.getOwnPropertyNames(properties)
   let props = allProps.filter((prop) => {
     const propSchema = properties[prop]
-    return !propSchema.virtual
-  })
-  if (_.isEmpty(options)) {
-    return props
-  }
-  props = props.filter((prop) => {
-    const propSchema = properties[prop]
-    return !exclude.some((item) => {
-      return Reflect.get(propSchema, item)
+    let highestExcludePriority: number = 0
+    let highestIncludePriority: number = 0
+    exclude.forEach((item) => {
+      if (Reflect.get(propSchema, item)) {
+        const priority = getSchemaPropPriority(item)
+        if (!highestExcludePriority || priority < highestExcludePriority) {
+          highestExcludePriority = priority
+        }
+      }
     })
-  })
-  props = props.concat(
-    allProps.filter((prop) => {
-      const propSchema = properties[prop]
-      return include.some((item) => {
-        return Reflect.get(propSchema, item)
-      })
+    include.forEach((item) => {
+      if (Reflect.get(propSchema, item)) {
+        const priority = getSchemaPropPriority(item)
+        if (!highestIncludePriority || priority < highestIncludePriority) {
+          highestIncludePriority = priority
+        }
+      }
     })
-  )
-  props = _.uniq(props)
+    if (!highestExcludePriority) {
+      return true
+    } else {
+      if (highestIncludePriority) {
+        return highestIncludePriority <= highestExcludePriority
+      } else {
+        return false
+      }
+    }
+  })
   props = _.difference(props, excludeProps)
   props = _.uniq(_.union(props, includeProps))
   props = _.intersection(props, allProps)

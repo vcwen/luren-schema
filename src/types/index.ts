@@ -37,6 +37,7 @@ export interface IJsSchema {
   items?: IJsSchema | IJsSchema[]
   private?: boolean
   virtual?: boolean
+  readonly?: boolean
   required?: string[]
   classConstructor?: Constructor<any>
   [prop: string]: any

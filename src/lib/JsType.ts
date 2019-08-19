@@ -451,8 +451,8 @@ export class ObjectType extends JsType {
       const propNames = Object.getOwnPropertyNames(properties)
       for (const prop of propNames) {
         const propSchema = properties[prop]
-        if (propSchema.virtual) {
-          // ignore virtual props when deserialize
+        if (!propSchema || propSchema.readonly) {
+          // ignore readonly props since there's no setter
           continue
         }
         let value = Reflect.get(data, prop)

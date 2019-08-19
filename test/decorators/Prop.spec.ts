@@ -50,15 +50,50 @@ describe('Prop', () => {
   it('should use the external schema  when schema  is set in options', () => {
     // tslint:disable-next-line:max-classes-per-file
     class TestController {
-      @Prop({ required: true, virtual: true, schema: { type: 'string', format: 'date' } })
+      @Prop({ required: true, schema: { type: 'string', format: 'date' } })
       public name!: string
     }
     const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
     expect(props.get('name')).toEqual(
       expect.objectContaining({
         required: true,
-        schema: { type: 'string', format: 'date', virtual: true }
+        schema: { type: 'string', format: 'date' }
       })
     )
+  })
+  it('should set virtual & readonly if prop use getter & setter', () => {
+    // tslint:disable-next-line:max-classes-per-file
+    class TestController {
+      private _foo!: number
+      @Prop({ required: true, schema: { type: 'string', format: 'date' } })
+      public get name(): string {
+        return 'name'
+      }
+      @Prop({ type: 'number' })
+      public get foo(): number {
+        return this._foo
+      }
+      public set foo(foo: number) {
+        this._foo = foo
+      }
+    }
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
+    expect(props.get('name')).toEqual({
+      name: 'name',
+      required: true,
+      schema: { type: 'string', format: 'date', virtual: true, readonly: true }
+    })
+    expect(props.get('foo')).toEqual({
+      name: 'foo',
+      required: true,
+      schema: { type: 'number', virtual: true }
+    })
+  })
+  it('should throw error is prop only has setter', () => {
+    expect(() => {
+      Prop()({}, 'name', {
+        set() {}
+      })
+    }).toThrowError()
   })
 })

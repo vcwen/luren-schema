@@ -9,7 +9,6 @@ export interface IPropOptions extends ICommonSchemaOptions {
   type?: SimpleType
   schema?: any
   required?: boolean
-  virtual?: boolean
   private?: boolean
 }
 
@@ -23,7 +22,12 @@ export class PropMetadata {
   }
 }
 
-const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string) => {
+const getPropMetadata = (
+  options: IPropOptions,
+  _2: object,
+  propertyKey: string,
+  descriptor?: TypedPropertyDescriptor<any>
+) => {
   const metadata = new PropMetadata(propertyKey, options.required)
   if (options.schema) {
     metadata.schema = options.schema
@@ -34,11 +38,19 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
       metadata.required = propRequired
     }
   }
-  if (options.virtual) {
-    metadata.schema.virtual = true
-  }
   if (options.private) {
     metadata.schema.private = options.private
+  }
+  if (descriptor) {
+    if (descriptor.get) {
+      metadata.schema.virtual = true
+      if (!descriptor.set) {
+        metadata.schema.readonly = true
+      }
+    } else {
+      // only setter
+      throw new Error('Only setter is not allowed')
+    }
   }
   const schemaOptions = copyProperties({}, options, ALL_JS_SCHEMA_PROPS.filter((item) => item !== 'required'))
   Object.assign(metadata.schema, schemaOptions)
@@ -46,9 +58,9 @@ const getPropMetadata = (options: IPropOptions, _2: object, propertyKey: string)
 }
 
 export function Prop(options: IPropOptions = {}) {
-  return (target: object, propertyKey: string) => {
+  return (target: object, propertyKey: string, descriptor?: TypedPropertyDescriptor<any>) => {
     let metadataMap: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, target) || Map()
-    const metadata = getPropMetadata(options, target, propertyKey)
+    const metadata = getPropMetadata(options, target, propertyKey, descriptor)
     metadataMap = metadataMap.set(propertyKey, metadata)
     Reflect.defineMetadata(MetadataKey.PROPS, metadataMap, target)
   }

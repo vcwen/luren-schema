@@ -189,9 +189,9 @@ describe('utils', () => {
         }
       }
       expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
-      expect(utils.getInclusiveProps(schema, { exclude: ['private'] })).toEqual(['name'])
+      expect(utils.getInclusiveProps(schema, { exclude: ['private'] })).toEqual(['name', 'fullName'])
       expect(utils.getInclusiveProps(schema, { onlyProps: ['fullName'] })).toEqual(['fullName'])
-      expect(utils.getInclusiveProps(schema, {})).toEqual(['name', 'foo'])
+      expect(utils.getInclusiveProps(schema, {})).toEqual(['name', 'foo', 'fullName'])
     })
     it("should return empty array if there's no props", () => {
       const props = utils.getInclusiveProps(
@@ -202,9 +202,52 @@ describe('utils', () => {
       )
       expect(props).toEqual([])
     })
+    it('should return props with high priority', () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          foo: { type: 'number', private: true, virtual: true, readonly: true },
+          fullName: { type: 'string', virtual: true, readonly: true }
+        }
+      }
+      expect(utils.getInclusiveProps(schema, { include: ['virtual'], exclude: ['readonly'] })).toEqual([
+        'name',
+        'foo',
+        'fullName'
+      ])
+      expect(utils.getInclusiveProps(schema, { exclude: ['private'], include: ['virtual'] })).toEqual([
+        'name',
+        'fullName'
+      ])
+      expect(utils.getInclusiveProps(schema, { exclude: ['readonly', 'private'], include: ['virtual'] })).toEqual([
+        'name',
+        'fullName'
+      ])
+      expect(utils.getInclusiveProps(schema, { include: ['readonly', 'private'], exclude: ['virtual'] })).toEqual([
+        'name',
+        'foo',
+        'fullName'
+      ])
+    })
     it('should throw error if schema type is not object', () => {
       expect(() => {
         utils.getInclusiveProps({ type: 'array' }, { exclude: ['private'] })
+      }).toThrowError()
+    })
+    it('should throw error if schema prop is not valid', () => {
+      expect(() => {
+        utils.getInclusiveProps(
+          {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              foo: { type: 'number', private: true, virtual: true, foo: true },
+              fullName: { type: 'string', virtual: true, readonly: true }
+            }
+          },
+          { exclude: ['bar', 'foo'] }
+        )
       }).toThrowError()
     })
   })
