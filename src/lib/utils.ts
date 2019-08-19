@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsSchema } from '../types'
-import DataTypes from './DataTypes'
+import DataTypes from './JsDataTypes'
 import { IJsTypeOptions } from './JsType'
 
 export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {

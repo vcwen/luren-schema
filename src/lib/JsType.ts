@@ -3,8 +3,8 @@ import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
 import { IJsonSchema, IJsSchema } from '../types'
-import DataTypes from './DataTypes'
-import { copyProperties, deserialize, getInclusiveProps, serialize, validate } from './utils'
+import { DataTypes } from './DataTypes'
+import { copyProperties, getInclusiveProps } from './utils'
 
 const ajv = new Ajv()
 
@@ -31,6 +31,10 @@ export interface IJsType {
 
 export abstract class JsType implements IJsType {
   public abstract type: string
+  protected dataTypes: DataTypes
+  constructor(dataTypes: DataTypes) {
+    this.dataTypes = dataTypes
+  }
   public validate(value: any, schema: IJsSchema): [boolean, string?] {
     if (_.isNil(value)) {
       return [true]
@@ -241,11 +245,6 @@ export class DateType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ArrayType extends JsType {
   public type: string = 'array'
-  protected typeHelper?: IJsTypeHelper
-  constructor(typeHelper?: IJsTypeHelper) {
-    super()
-    this.typeHelper = typeHelper
-  }
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'array' }
     const items = schema.items
@@ -253,11 +252,11 @@ export class ArrayType extends JsType {
     if (items) {
       if (Array.isArray(items)) {
         jsonItems = items.map((item) => {
-          const jsType = DataTypes.get(item.type)
+          const jsType = this.dataTypes.get(item.type)
           return jsType.toJsonSchema(item, options)
         })
       } else {
-        const jsType = DataTypes.get(items.type)
+        const jsType = this.dataTypes.get(items.type)
         jsonItems = jsType.toJsonSchema(items, options)
       }
     }
@@ -276,18 +275,16 @@ export class ArrayType extends JsType {
       if (itemSchema) {
         if (Array.isArray(itemSchema)) {
           for (let i = 0; i < val.length; i++) {
-            const [valid, msg] = this.typeHelper
-              ? this.typeHelper.validate(val[i], itemSchema[i], options)
-              : validate(val[i], itemSchema[i], options)
+            const jsType = this.dataTypes.get(itemSchema[i].type)
+            const [valid, msg] = jsType.validate(val[i], itemSchema[i], options)
             if (!valid) {
               return [valid, `[${i}]${msg}`]
             }
           }
         } else {
           for (let i = 0; i < val.length; i++) {
-            const [valid, msg] = this.typeHelper
-              ? this.typeHelper.validate(val[i], itemSchema, options)
-              : validate(val[i], itemSchema, options)
+            const jsType = this.dataTypes.get(itemSchema.type)
+            const [valid, msg] = jsType.validate(val[i], itemSchema, options)
             if (!valid) {
               return [valid, `[${i}]:${msg}`]
             }
@@ -312,21 +309,15 @@ export class ArrayType extends JsType {
         if (Array.isArray(schema.items)) {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
-            val.push(
-              this.typeHelper
-                ? this.typeHelper.serialize(value[i], schema.items[i], options)
-                : serialize(value[i], schema.items[i], options)
-            )
+            const jsType = this.dataTypes.get(schema.items[i].type)
+            val.push(jsType.serialize(value[i], schema.items[i], options))
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
-            return value.map((item) =>
-              this.typeHelper
-                ? this.typeHelper.serialize(item, itemSchema, options)
-                : serialize(item, itemSchema, options)
-            )
+            const jsType = this.dataTypes.get(itemSchema.type)
+            return value.map((item) => jsType.serialize(item, itemSchema, options))
           }
         }
       } else {
@@ -351,21 +342,15 @@ export class ArrayType extends JsType {
         if (Array.isArray(schema.items)) {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
-            val.push(
-              this.typeHelper
-                ? this.typeHelper.deserialize(value[i], schema.items[i], options)
-                : deserialize(value[i], schema.items[i], options)
-            )
+            const jsType = this.dataTypes.get(schema.items[i].type)
+            val.push(jsType.deserialize(value[i], schema.items[i], options))
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
-            return value.map((item) =>
-              this.typeHelper
-                ? this.typeHelper.deserialize(item, itemSchema, options)
-                : deserialize(item, itemSchema, options)
-            )
+            const jsType = this.dataTypes.get(itemSchema.type)
+            return value.map((item) => jsType.deserialize(item, itemSchema, options))
           }
         }
       } else {
@@ -377,11 +362,6 @@ export class ArrayType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ObjectType extends JsType {
   public type: string = 'object'
-  protected typeHelper?: IJsTypeHelper
-  public constructor(typeHelper?: IJsTypeHelper) {
-    super()
-    this.typeHelper = typeHelper
-  }
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'object' }
     options = options || {}
@@ -391,7 +371,7 @@ export class ObjectType extends JsType {
       jsonSchema.properties = {}
       for (const prop of props) {
         const propSchema = properties[prop]
-        const jsType = DataTypes.get(propSchema.type)
+        const jsType = this.dataTypes.get(propSchema.type)
         Reflect.set(jsonSchema.properties, prop, jsType.toJsonSchema(propSchema))
       }
     }
@@ -419,9 +399,8 @@ export class ObjectType extends JsType {
       if (requiredProps.includes(prop) && _.isNil(value)) {
         return [false, `${prop} is required`]
       }
-      const [valid, msg] = this.typeHelper
-        ? this.typeHelper.validate(value, propSchema, options)
-        : validate(value, propSchema, options)
+      const jsType = this.dataTypes.get(propSchema.type)
+      const [valid, msg] = jsType.validate(value, propSchema, options)
       if (!valid) {
         return [valid, `${prop}:${msg}`]
       }
@@ -447,10 +426,8 @@ export class ObjectType extends JsType {
       const props = getInclusiveProps(schema, options)
       for (const prop of props) {
         const propSchema = properties[prop]
-        let value = Reflect.get(data, prop)
-        value = this.typeHelper
-          ? this.typeHelper.serialize(value, propSchema, options)
-          : serialize(value, propSchema, options)
+        const jsType = this.dataTypes.get(propSchema.type)
+        const value = jsType.serialize(Reflect.get(data, prop), propSchema, options)
         if (_.isNil(value)) {
           continue
         }
@@ -495,10 +472,8 @@ export class ObjectType extends JsType {
           // ignore readonly props since there's no setter
           continue
         }
-        let value = Reflect.get(data, prop)
-        value = this.typeHelper
-          ? this.typeHelper.deserialize(value, propSchema, options)
-          : deserialize(value, propSchema, options)
+        const jsType = this.dataTypes.get(propSchema.type)
+        const value = jsType.deserialize(Reflect.get(data, prop), propSchema, options)
         if (_.isNil(value)) {
           continue
         }

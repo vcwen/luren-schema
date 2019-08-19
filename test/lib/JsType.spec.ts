@@ -9,9 +9,10 @@ import {
   ObjectType,
   StringType
 } from '../../src'
+import JsDataTypes from '../../src/lib/JsDataTypes'
 
 describe('AnyType', () => {
-  const anyType = new AnyType()
+  const anyType = new AnyType(JsDataTypes)
   describe('validate', () => {
     it('should return true for all data', () => {
       expect(anyType.validate(undefined)).toBeTruthy()
@@ -58,7 +59,7 @@ describe('AnyType', () => {
 })
 
 describe('StringType', () => {
-  const stringType = new StringType()
+  const stringType = new StringType(JsDataTypes)
   describe('validate', () => {
     it('should return true for valid string', () => {
       const [res1] = stringType.validate('string', { type: 'string' })
@@ -129,20 +130,20 @@ describe('StringType', () => {
 })
 
 describe('BooleanType', () => {
-  const booleanType = new BooleanType()
+  const booleanType = new BooleanType(JsDataTypes)
   expect(booleanType.type).toBe('boolean')
 })
 
 describe('NumberType', () => {
-  const booleanType = new NumberType()
+  const booleanType = new NumberType(JsDataTypes)
   expect(booleanType.type).toBe('number')
 })
 describe('IntegerType', () => {
-  const booleanType = new IntegerType()
+  const booleanType = new IntegerType(JsDataTypes)
   expect(booleanType.type).toBe('integer')
 })
 describe('DateType', () => {
-  const dateType = new DateType()
+  const dateType = new DateType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
       const [res1] = dateType.validate(new Date())
@@ -222,7 +223,7 @@ describe('DateType', () => {
   })
 })
 describe('ArrayType', () => {
-  const arrayType = new ArrayType()
+  const arrayType = new ArrayType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
       const [res1] = arrayType.validate(['item1', 1, true], { type: 'array' })
@@ -334,7 +335,7 @@ describe('ArrayType', () => {
   })
 })
 describe('ObjectType', () => {
-  const objectType = new ObjectType()
+  const objectType = new ObjectType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
       const [res1] = objectType.validate({ foo: 'bar', age: 12 }, { type: 'object' })
