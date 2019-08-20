@@ -1,9 +1,9 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
 import { IJsSchema } from '../types'
-import { IJsType, IJsTypeOptions, JsType } from './JsType'
+import { IJsType, IJsTypeOptions } from './JsType'
 
-export class DataTypes<T extends IJsType = JsType> {
+export class DataTypes<T extends IJsType = IJsType> {
   private _types = Map<string, T>()
   public register(type: string, jsType: T) {
     if (this._types.has(type)) {
