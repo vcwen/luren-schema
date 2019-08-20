@@ -9,7 +9,7 @@ import {
   ObjectType,
   StringType
 } from '../../src'
-import JsDataTypes from '../../src/lib/JsDataTypes'
+import JsDataTypes from '../../src/lib/JsTypes'
 
 describe('AnyType', () => {
   const anyType = new AnyType(JsDataTypes)
