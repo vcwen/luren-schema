@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.42"></a>
+## [0.0.42](https://github.com/vcwen/luren-schema/compare/v0.0.41...v0.0.42) (2019-08-20)
+
+
+
 <a name="0.0.41"></a>
 ## [0.0.41](https://github.com/vcwen/luren-schema/compare/v0.0.40...v0.0.41) (2019-08-19)
 
