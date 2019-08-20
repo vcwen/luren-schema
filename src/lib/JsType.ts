@@ -35,7 +35,7 @@ export abstract class JsType implements IJsType {
   constructor(dataTypes: DataTypes) {
     this.dataTypes = dataTypes
   }
-  public validate(value: any, schema: IJsSchema): [boolean, string?] {
+  public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): [boolean, string?] {
     if (_.isNil(value)) {
       return [true]
     } else {
@@ -48,7 +48,7 @@ export abstract class JsType implements IJsType {
       }
     }
   }
-  public serialize(value: any | undefined, schema: IJsSchema): any {
+  public serialize(value: any | undefined, schema: IJsSchema, _1?: IJsTypeOptions): any {
     const [valid, msg] = this.validate(value, schema)
     if (!valid) {
       throw new Error(msg)
@@ -59,7 +59,7 @@ export abstract class JsType implements IJsType {
       return value
     }
   }
-  public deserialize(value: any, schema: IJsSchema): any {
+  public deserialize(value: any, schema: IJsSchema, _1?: IJsTypeOptions): any {
     if (_.isNil(value)) {
       return this.getDefaultValue(schema)
     } else {
@@ -72,7 +72,7 @@ export abstract class JsType implements IJsType {
     }
   }
 
-  public toJsonSchema(schema: IJsSchema): IJsonSchema {
+  public toJsonSchema(schema: IJsSchema, _1?: IJsTypeOptions): IJsonSchema {
     const jsonSchema: IJsonSchema = { type: schema.type }
     copyProperties(jsonSchema, schema, allJsonSchemaProps)
     return jsonSchema

@@ -1,17 +1,17 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
 import { IJsSchema } from '../types'
-import { IJsType, IJsTypeOptions } from './JsType'
+import { IJsType, IJsTypeOptions, JsType } from './JsType'
 
-export class DataTypes {
-  private _types = Map<string, IJsType>()
-  public register(type: string, jsType: IJsType) {
+export class DataTypes<T extends IJsType = JsType> {
+  private _types = Map<string, T>()
+  public register(type: string, jsType: T) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)
     }
     this._types = this._types.set(type, jsType)
   }
-  public update(type: string, jsType: IJsType) {
+  public update(type: string, jsType: T) {
     this._types = this._types.set(type, jsType)
   }
   public get(type: string) {
