@@ -2,8 +2,8 @@ import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsSchema } from '../types'
-import DataTypes from './JsDataTypes'
 import { IJsTypeOptions } from './JsType'
+import DataTypes from './JsTypes'
 
 export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
   const metadata = new SchemaMetadata(target.name, schema)
@@ -18,21 +18,6 @@ export const getJsSchema = (target: object | Constructor) => {
   } else {
     return undefined
   }
-}
-export const validate = (data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] => {
-  const jsType = DataTypes.get(schema.type)
-  return jsType.validate(data, schema, options)
-}
-
-export const serialize = (data: any, schema: IJsSchema, options?: IJsTypeOptions) => {
-  const jsType = DataTypes.get(schema.type)
-  return jsType.serialize(data, schema, options)
-}
-
-export const deserialize = (json: any, schema: IJsSchema, options?: IJsTypeOptions) => {
-  const jsType = DataTypes.get(schema.type)
-  const data = jsType.deserialize(json, schema, options)
-  return data
 }
 
 const normalizeType = (type: string): [string, boolean] => {

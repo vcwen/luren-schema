@@ -1,6 +1,7 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
-import { IJsType } from './JsType'
+import { IJsSchema } from '../types'
+import { IJsType, IJsTypeOptions } from './JsType'
 
 export class DataTypes {
   private _types = Map<string, IJsType>()
@@ -20,6 +21,21 @@ export class DataTypes {
     } else {
       return jsType
     }
+  }
+  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
+    const jsType = this.get(schema.type)
+    return jsType.validate(data, schema, options)
+  }
+
+  public serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions) {
+    const jsType = this.get(schema.type)
+    return jsType.serialize(data, schema, options)
+  }
+
+  public deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions) {
+    const jsType = this.get(schema.type)
+    const data = jsType.deserialize(json, schema, options)
+    return data
   }
 }
 

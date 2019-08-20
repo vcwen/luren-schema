@@ -2,7 +2,6 @@ import DataTypes from './DataTypes'
 import { AnyType, ArrayType, BooleanType, DateType, IntegerType, NumberType, ObjectType, StringType } from './JsType'
 
 export const JsTypes = new DataTypes()
-
 JsTypes.register('any', new AnyType(JsTypes))
 JsTypes.register('string', new StringType(JsTypes))
 JsTypes.register('boolean', new BooleanType(JsTypes))

@@ -1,6 +1,5 @@
 // tslint:disable: max-classes-per-file
-import { IJsSchema, Prop, Schema, utils } from '../../src'
-import { getJsSchema } from '../../src/lib/utils'
+import { Prop, Schema, utils } from '../../src'
 
 describe('utils', () => {
   describe('getJsSchema', () => {
@@ -262,34 +261,6 @@ describe('utils', () => {
       const err = 'test error'
       const res = utils.setErrorMessagePrefix(err, 'test:') as string
       expect(res).toBe('test:test error')
-    })
-  })
-  describe('validate', () => {
-    it('validate the data', () => {
-      const [valid] = utils.validate('string', { type: 'string' })
-      expect(valid).toBeTruthy()
-    })
-  })
-  describe('serialize', () => {
-    it('should return serialized data', () => {
-      const json = utils.serialize({ name: 'my_name', foo: 'bar' }, { type: 'object' })
-      expect(json).toEqual({ name: 'my_name', foo: 'bar' })
-    })
-  })
-  describe('deserialize', () => {
-    it('should  deserialize data', () => {
-      @Schema()
-      class Person {
-        @Prop()
-        public name!: string
-        @Prop({ type: 'number?' })
-        public foo?: number
-        @Prop({ type: 'boolean' })
-        public bar!: boolean
-      }
-      const obj = utils.deserialize({ name: 'my_name', foo: 2, bar: true }, getJsSchema(Person) as IJsSchema)
-      expect(obj).toBeInstanceOf(Person)
-      expect(obj).toEqual({ name: 'my_name', foo: 2, bar: true })
     })
   })
 })
