@@ -136,6 +136,14 @@ describe('utils', () => {
         true
       ])
     })
+    it('should convert function type', () => {
+      class Foo {}
+      expect(
+        utils.convertSimpleSchemaToJsSchema(Foo, () => {
+          return { type: 'string' }
+        })
+      ).toEqual([{ type: 'string' }, true])
+    })
   })
   describe('toJsonSchema', () => {
     it('should define JsSchema on class', () => {

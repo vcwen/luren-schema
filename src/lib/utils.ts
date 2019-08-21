@@ -52,65 +52,79 @@ const normalizeProp = (decoratedProp: string): [string, boolean] => {
   }
 }
 
-export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean] => {
-  if (typeof schema === 'function') {
-    const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, schema.prototype)
-    if (schemaMetadata) {
-      return [schemaMetadata.schema, true]
-    } else {
-      let type: string
-      switch (schema) {
-        case String:
-          type = 'string'
-          break
-        case Boolean:
-          type = 'boolean'
-          break
-        case Number:
-          type = 'number'
-          break
-        case Object:
-          type = 'object'
-          break
-        case Date:
-          type = 'date'
-          break
-        case Array:
-          type = 'array'
-          break
-        default:
-          throw new Error(`Invalid schema:${schema}`)
+export const convertSimpleSchemaToJsSchema = (
+  simpleSchema: any,
+  // tslint:disable-next-line: ban-types
+  preprocessor?: (simpleSchema: any) => IJsSchema | undefined
+): [IJsSchema, boolean] => {
+  if (!preprocessor) {
+    // tslint:disable-next-line: ban-types
+    preprocessor = (simSchema: any) => {
+      if (typeof simSchema === 'function') {
+        const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, simSchema.prototype)
+        if (schemaMetadata) {
+          return schemaMetadata.schema
+        }
       }
-      return [{ type }, true]
     }
+  }
+  const jsSchema = preprocessor(simpleSchema)
+  if (jsSchema) {
+    return [jsSchema, true]
+  }
+  if (typeof simpleSchema === 'function') {
+    let type: string
+    switch (simpleSchema) {
+      case String:
+        type = 'string'
+        break
+      case Boolean:
+        type = 'boolean'
+        break
+      case Number:
+        type = 'number'
+        break
+      case Object:
+        type = 'object'
+        break
+      case Date:
+        type = 'date'
+        break
+      case Array:
+        type = 'array'
+        break
+      default:
+        throw new Error(`Invalid schema:${simpleSchema}`)
+    }
+    return [{ type }, true]
   }
 
   let extraOptions: any
 
   // if length is greater than one, it means it has options rather than an array type
-  if (Array.isArray(schema) && schema.length > 1) {
-    extraOptions = schema[1]
-    schema = schema[0]
+  if (Array.isArray(simpleSchema) && simpleSchema.length > 1) {
+    extraOptions = simpleSchema[1]
+    simpleSchema = simpleSchema[0]
   }
 
-  if (typeof schema === 'string') {
-    const [type, required] = normalizeType(schema)
+  if (typeof simpleSchema === 'string') {
+    const [type, required] = normalizeType(simpleSchema)
     const jsSchema: IJsSchema = Object.assign({ type }, extraOptions)
     return [jsSchema, required]
-  } else if (Array.isArray(schema)) {
+  } else if (Array.isArray(simpleSchema)) {
     const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
-    if (schema[0]) {
-      const [itemSchema] = convertSimpleSchemaToJsSchema(schema[0])
+    if (simpleSchema[0]) {
+      const [itemSchema] = convertSimpleSchemaToJsSchema(simpleSchema[0])
       propSchema.items = itemSchema
     }
     return [propSchema, true]
-  } else if (typeof schema === 'object') {
+  } else if (typeof simpleSchema === 'object') {
     const jsSchema: IJsSchema = { type: 'object' }
     const properties: { [key: string]: IJsSchema } = {}
     const requiredProps = [] as string[]
-    const props = Object.getOwnPropertyNames(schema)
+    const props = Object.getOwnPropertyNames(simpleSchema)
     for (const prop of props) {
-      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(schema[prop])
+      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(simpleSchema[prop])
       const [propName, required] = normalizeProp(prop)
       properties[propName] = propSchema
       if (required && propRequired) {
@@ -126,7 +140,7 @@ export const convertSimpleSchemaToJsSchema = (schema: any): [IJsSchema, boolean]
     Object.assign(jsSchema, extraOptions)
     return [jsSchema, true]
   } else {
-    throw new TypeError('Invalid schema:' + schema)
+    throw new TypeError('Invalid schema:' + simpleSchema)
   }
 }
 
