@@ -464,7 +464,10 @@ export class ObjectType extends JsType {
     }
     const properties = schema.properties
     if (properties && !_.isEmpty(properties)) {
-      const obj = schema.classConstructor ? new schema.classConstructor() : {}
+      const obj = {}
+      if (schema.classConstructor) {
+        Reflect.setPrototypeOf(obj, schema.classConstructor.prototype)
+      }
       const propNames = Object.getOwnPropertyNames(properties)
       for (const prop of propNames) {
         const propSchema = properties[prop]

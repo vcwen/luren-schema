@@ -27,6 +27,9 @@ describe('Prop', () => {
       public name!: string
       @Prop({ private: true })
       public password!: string
+      constructor(name: string) {
+        this.name = name.toLocaleLowerCase()
+      }
     }
     const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
     expect(props.get('name')).toEqual(
