@@ -68,9 +68,9 @@ export const convertSimpleSchemaToJsSchema = (
       }
     }
   }
-  const jsSchema = preprocessor(simpleSchema)
-  if (jsSchema) {
-    return [jsSchema, true]
+  const schema = preprocessor(simpleSchema)
+  if (schema) {
+    return [schema, true]
   }
   if (typeof simpleSchema === 'function') {
     let type: string
@@ -114,7 +114,7 @@ export const convertSimpleSchemaToJsSchema = (
   } else if (Array.isArray(simpleSchema)) {
     const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
     if (simpleSchema[0]) {
-      const [itemSchema] = convertSimpleSchemaToJsSchema(simpleSchema[0])
+      const [itemSchema] = convertSimpleSchemaToJsSchema(simpleSchema[0], preprocessor)
       propSchema.items = itemSchema
     }
     return [propSchema, true]
@@ -124,7 +124,7 @@ export const convertSimpleSchemaToJsSchema = (
     const requiredProps = [] as string[]
     const props = Object.getOwnPropertyNames(simpleSchema)
     for (const prop of props) {
-      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(simpleSchema[prop])
+      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(simpleSchema[prop], preprocessor)
       const [propName, required] = normalizeProp(prop)
       properties[propName] = propSchema
       if (required && propRequired) {
