@@ -6,7 +6,7 @@ import { IJsonSchema, IJsSchema } from '../types'
 import { DataTypes } from './DataTypes'
 import { copyProperties, getInclusiveProps } from './utils'
 
-const ajv = new Ajv()
+const ajv = new Ajv({ useDefaults: true })
 
 export interface IJsTypeOptions {
   include?: string[]
