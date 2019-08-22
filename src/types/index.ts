@@ -40,6 +40,7 @@ export interface IJsSchema {
   readonly?: boolean
   required?: string[]
   classConstructor?: Constructor<any>
+  default?: any
   [prop: string]: any
 }
 

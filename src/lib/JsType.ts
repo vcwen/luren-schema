@@ -238,6 +238,9 @@ export class DateType extends JsType {
   public toJsonSchema(schema: IJsSchema) {
     const jsonSchema: IJsonSchema = { type: 'string', format: 'date-time' }
     copyProperties(jsonSchema, schema, allJsonSchemaProps)
+    if (!_.isNil(schema.default)) {
+      jsonSchema.default = this.serialize(schema.default, schema)
+    }
     return jsonSchema
   }
 }
@@ -263,6 +266,9 @@ export class ArrayType extends JsType {
     copyProperties(jsonSchema, schema, allJsonSchemaProps)
     if (jsonItems) {
       jsonSchema.items = jsonItems
+    }
+    if (!_.isNil(schema.default)) {
+      jsonSchema.default = this.serialize(schema.default, schema, options)
     }
     return jsonSchema
   }
@@ -380,6 +386,9 @@ export class ObjectType extends JsType {
       jsonSchema.required = required
     }
     copyProperties(jsonSchema, schema, ALL_COMMON_SCHEMA_PROPS)
+    if (!_.isNil(schema.default)) {
+      schema.default = this.serialize(schema.default, schema, options)
+    }
     return jsonSchema
   }
   public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
