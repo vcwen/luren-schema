@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import {
   AnyType,
   ArrayType,
@@ -193,6 +194,8 @@ describe('DateType', () => {
         const time = dateType.deserialize('20:11:38+00:00', { type: 'date', format: 'time' }) as Date
         expect(time.toISOString().endsWith('20:11:38.000Z')).toBeTruthy()
         expect(dateType.deserialize(undefined, { type: 'date' })).toBeUndefined()
+        const now = new Date()
+        expect(dateType.deserialize(undefined, { type: 'date', default: now })).toEqual(now)
       })
       it('should use default value when value is undefined', () => {
         expect(
@@ -201,7 +204,7 @@ describe('DateType', () => {
       })
       it('should throw error when value is invalid', () => {
         expect(() => {
-          dateType.deserialize([], { type: 'string', default: 'foo' })
+          dateType.deserialize([], { type: 'string' })
         }).toThrowError()
       })
       it('should throw error when default value is invalid', () => {
@@ -215,11 +218,14 @@ describe('DateType', () => {
       type: 'date'
     })
     expect(jsonSchema1).toEqual({ type: 'string', format: 'date-time' })
+    const now = new Date()
     const jsonSchema2 = dateType.toJsonSchema({
       type: 'date',
-      format: 'date'
+      format: 'date',
+      default: now
     })
-    expect(jsonSchema2).toEqual({ type: 'string', format: 'date' })
+    const date = DateTime.fromJSDate(now).toFormat('yyyy-MM-dd')
+    expect(jsonSchema2).toEqual({ type: 'string', format: 'date', default: date })
   })
 })
 describe('ArrayType', () => {

@@ -3,7 +3,6 @@ import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsSchema } from '../types'
 import { IJsTypeOptions } from './JsType'
-import DataTypes from './JsTypes'
 
 export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
   const metadata = new SchemaMetadata(target.name, schema)
@@ -142,11 +141,6 @@ export const convertSimpleSchemaToJsSchema = (
   } else {
     throw new TypeError('Invalid schema:' + simpleSchema)
   }
-}
-
-export const toJsonSchema = <T extends IJsSchema>(schema: T) => {
-  const jsType = DataTypes.get(schema.type)
-  return jsType.toJsonSchema(schema)
 }
 
 export const copyProperties = (target: object, source: object, props: string[]) => {

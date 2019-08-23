@@ -37,6 +37,10 @@ export class DataTypes<T extends IJsType = IJsType> {
     const data = jsType.deserialize(json, schema, options)
     return data
   }
+  public toJsonSchema(schema: IJsSchema) {
+    const jsType = this.get(schema.type)
+    return jsType.toJsonSchema(schema)
+  }
 }
 
 export default DataTypes
