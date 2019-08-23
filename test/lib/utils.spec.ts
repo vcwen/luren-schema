@@ -1,5 +1,6 @@
 // tslint:disable: max-classes-per-file
 import { Prop, Schema, utils } from '../../src'
+import { normalizeNullValue } from '../../src/lib/utils'
 
 describe('utils', () => {
   describe('getJsSchema', () => {
@@ -237,6 +238,16 @@ describe('utils', () => {
       const err = 'test error'
       const res = utils.setErrorMessagePrefix(err, 'test:') as string
       expect(res).toBe('test:test error')
+    })
+  })
+  describe('normalizeNullValue', () => {
+    it('should convert null to undefined', () => {
+      expect(normalizeNullValue(null)).toBeUndefined()
+      expect(normalizeNullValue([null, 1, 'string'])).toEqual([undefined, 1, 'string'])
+      expect(normalizeNullValue({ name: null, foo: 'bar' })).toEqual({ name: undefined, foo: 'bar' })
+      expect(normalizeNullValue('foo')).toBe('foo')
+      expect(normalizeNullValue([true, 1, 'string'])).toEqual([true, 1, 'string'])
+      expect(normalizeNullValue({ name: false, foo: 'bar' })).toEqual({ name: false, foo: 'bar' })
     })
   })
 })

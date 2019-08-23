@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
 import { IJsonSchema, IJsSchema } from '../types'
 import { DataTypes } from './DataTypes'
-import { copyProperties, getInclusiveProps } from './utils'
+import { copyProperties, getInclusiveProps, normalizeNullValue } from './utils'
 
 const ajv = new Ajv({ useDefaults: true })
 
@@ -40,6 +40,7 @@ export abstract class JsType implements IJsType {
       return [true]
     } else {
       const jsonSchema = this.toJsonSchema(schema)
+      value = normalizeNullValue(value)
       const valid = ajv.validate(jsonSchema, value) as boolean
       if (valid) {
         return [true]
@@ -64,6 +65,7 @@ export abstract class JsType implements IJsType {
       return this.getDefaultValue(schema)
     } else {
       const jsonSchema = this.toJsonSchema(schema)
+      value = normalizeNullValue(value)
       const valid = ajv.validate(jsonSchema, value) as boolean
       if (!valid) {
         throw new Error(ajv.errorsText())
@@ -338,6 +340,7 @@ export class ArrayType extends JsType {
         return
       }
     }
+    value = normalizeNullValue(value)
     const jsonSchema = this.toJsonSchema(schema)
     const valid = ajv.validate(jsonSchema, value) as boolean
     if (!valid) {
@@ -467,6 +470,7 @@ export class ObjectType extends JsType {
       }
     }
     const jsonSchema = this.toJsonSchema(schema, options)
+    data = normalizeNullValue(data)
     const valid = ajv.validate(jsonSchema, data) as boolean
     if (!valid) {
       throw new Error(ajv.errorsText())
