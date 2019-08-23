@@ -235,3 +235,25 @@ export const setErrorMessagePrefix = (err: any, prefix: string) => {
     return prefix + err
   }
 }
+
+export const normalizeNullValue = (value: any) => {
+  if (value === null) {
+    value = undefined
+  } else if (Array.isArray(value)) {
+    value = value.map((item) => {
+      if (item === null) {
+        return undefined
+      } else {
+        return item
+      }
+    })
+  } else if (typeof value === 'object') {
+    const props = Object.getOwnPropertyNames(value)
+    for (const prop of props) {
+      if (Reflect.get(value, prop) === null) {
+        Reflect.set(value, prop, undefined)
+      }
+    }
+  }
+  return value
+}
