@@ -2,6 +2,7 @@ import { Map } from 'immutable'
 import _ from 'lodash'
 import { IJsSchema } from '../types'
 import { IJsType, IJsTypeOptions } from './JsType'
+import ValidationResult from './ValidationResult'
 
 export class DataTypes<T extends IJsType = IJsType> {
   private _types = Map<string, T>()
@@ -22,7 +23,7 @@ export class DataTypes<T extends IJsType = IJsType> {
       return jsType
     }
   }
-  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
+  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): ValidationResult {
     const jsType = this.get(schema.type)
     return jsType.validate(data, schema, options)
   }

@@ -5,6 +5,8 @@ import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
 import { IJsonSchema, IJsSchema } from '../types'
 import { DataTypes } from './DataTypes'
 import { copyProperties, getInclusiveProps, normalizeNullValue } from './utils'
+import ValidationError from './ValidationError'
+import ValidationResult, { IValidationResult } from './ValidationResult'
 
 const ajv = new Ajv({ useDefaults: true })
 
@@ -17,7 +19,7 @@ export interface IJsTypeOptions {
 }
 
 export interface IJsTypeHelper {
-  validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?]
+  validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult
   serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions): any
   deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions): any
 }
@@ -25,7 +27,7 @@ export interface IJsType {
   type: string
   serialize: (value: any, schema: IJsSchema, options?: IJsTypeOptions) => any
   deserialize: (value: any, schema: IJsSchema, options?: IJsTypeOptions) => any
-  validate(value: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?]
+  validate(value: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult
   toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions): IJsonSchema
 }
 
@@ -35,24 +37,24 @@ export abstract class JsType implements IJsType {
   constructor(dataTypes: DataTypes) {
     this.dataTypes = dataTypes
   }
-  public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): [boolean, string?] {
+  public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): IValidationResult {
     if (_.isNil(value)) {
-      return [true]
+      return ValidationResult.OK
     } else {
       const jsonSchema = this.toJsonSchema(schema)
       value = normalizeNullValue(value)
       const valid = ajv.validate(jsonSchema, value) as boolean
       if (valid) {
-        return [true]
+        return ValidationResult.OK
       } else {
-        return [false, ajv.errorsText()]
+        return new ValidationResult(false, new ValidationError(ajv.errorsText()))
       }
     }
   }
   public serialize(value: any | undefined, schema: IJsSchema, _1?: IJsTypeOptions): any {
-    const [valid, msg] = this.validate(value, schema)
-    if (!valid) {
-      throw new Error(msg)
+    const res = this.validate(value, schema)
+    if (!res.valid) {
+      throw new Error(res.getErrorMessage())
     }
     if (_.isNil(value)) {
       return this.getDefaultValue(schema)
@@ -82,11 +84,11 @@ export abstract class JsType implements IJsType {
   protected getDefaultValue(schema: IJsSchema) {
     if (!_.isNil(schema.default)) {
       const value = schema.default
-      const [valid, msg] = this.validate(value, schema)
-      if (valid) {
+      const res = this.validate(value, schema)
+      if (res.valid) {
         return value
       } else {
-        throw new Error(msg)
+        throw new Error(res.getErrorMessage())
       }
     }
   }
@@ -120,8 +122,8 @@ const allJsonSchemaProps = [
 // tslint:disable-next-line: max-classes-per-file
 export class AnyType extends JsType {
   public type: string = 'any'
-  public validate(_1: any): [boolean, string?] {
-    return [true]
+  public validate(_1: any): IValidationResult {
+    return ValidationResult.OK
   }
   public serialize(val: any, schema: IJsSchema) {
     if (_.isNil(val)) {
@@ -167,20 +169,20 @@ export class IntegerType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class DateType extends JsType {
   public type: string = 'date'
-  public validate(value: any): [boolean, string?] {
+  public validate(value: any): IValidationResult {
     if (_.isNil(value)) {
-      return [true]
+      return ValidationResult.OK
     }
     if (value instanceof Date) {
-      return [true]
+      return ValidationResult.OK
     } else {
-      return [false, `Invalid date value: ${value}`]
+      return new ValidationResult(false, new ValidationError(`Invalid date value: ${value}`))
     }
   }
   public serialize(value: any | undefined, schema: IJsSchema) {
-    const [valid, msg] = this.validate(value)
-    if (!valid) {
-      throw new Error(msg)
+    const res = this.validate(value)
+    if (!res.valid) {
+      throw new Error(res.getErrorMessage())
     }
     if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
@@ -274,9 +276,9 @@ export class ArrayType extends JsType {
     }
     return jsonSchema
   }
-  public validate(val: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
+  public validate(val: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult {
     if (_.isNil(val)) {
-      return [true]
+      return ValidationResult.OK
     }
     if (Array.isArray(val)) {
       const itemSchema = schema.items
@@ -284,30 +286,31 @@ export class ArrayType extends JsType {
         if (Array.isArray(itemSchema)) {
           for (let i = 0; i < val.length; i++) {
             const jsType = this.dataTypes.get(itemSchema[i].type)
-            const [valid, msg] = jsType.validate(val[i], itemSchema[i], options)
-            if (!valid) {
-              return [valid, `[${i}]${msg}`]
+            const res = jsType.validate(val[i], itemSchema[i], options)
+            if (!res.valid) {
+              return new ValidationResult(false, new ValidationError(`[${i}]`, res.error?.message || ''))
             }
           }
         } else {
           for (let i = 0; i < val.length; i++) {
             const jsType = this.dataTypes.get(itemSchema.type)
-            const [valid, msg] = jsType.validate(val[i], itemSchema, options)
-            if (!valid) {
-              return [valid, `[${i}]:${msg}`]
+            const res = jsType.validate(val[i], itemSchema, options)
+            if (!res.valid) {
+              const propChain = res.error?.prop ? `[${i}].${res.error.prop}` : `[${i}]`
+              return new ValidationResult(false, new ValidationError(propChain, res.error?.message || ''))
             }
           }
         }
       }
-      return [true, '']
+      return ValidationResult.OK
     } else {
-      return [false, `Invalid array:${val}`]
+      return new ValidationResult(false, new ValidationError(`Invalid array:${val}`))
     }
   }
   public serialize(value: any, schema: IJsSchema, options?: IJsTypeOptions) {
-    const [valid, msg] = this.validate(value, schema, options)
-    if (!valid) {
-      throw new Error(msg)
+    const res = this.validate(value, schema, options)
+    if (!res.valid) {
+      throw new Error(res.getErrorMessage())
     }
     if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
@@ -394,12 +397,12 @@ export class ObjectType extends JsType {
     }
     return jsonSchema
   }
-  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): [boolean, string?] {
+  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult {
     if (_.isNil(data)) {
-      return [true]
+      return ValidationResult.OK
     }
     if (typeof data !== 'object') {
-      return [false, `Invalid object value: ${data}`]
+      return new ValidationResult(false, new ValidationError(`Invalid object value: ${data}`))
     }
     const properties = schema.properties || {}
     const requiredProps = schema.required || []
@@ -409,15 +412,16 @@ export class ObjectType extends JsType {
       const propSchema = properties[prop]
       const value = Reflect.get(data, prop)
       if (requiredProps.includes(prop) && _.isNil(value)) {
-        return [false, `${prop} is required`]
+        return new ValidationResult(false, new ValidationError(prop, `${prop} is required`))
       }
       const jsType = this.dataTypes.get(propSchema.type)
-      const [valid, msg] = jsType.validate(value, propSchema, options)
-      if (!valid) {
-        return [valid, `${prop}:${msg}`]
+      const res = jsType.validate(value, propSchema, options)
+      if (!res.valid) {
+        const propChain = res.error?.prop ? `${prop}.${res.error.prop}` : prop
+        return new ValidationResult(false, new ValidationError(propChain, res.error?.message || ''))
       }
     }
-    return [true]
+    return ValidationResult.OK
   }
   public serialize(data: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
     if (_.isNil(data)) {
@@ -426,9 +430,9 @@ export class ObjectType extends JsType {
         return
       }
     }
-    const [valid, msg] = this.validate(data, schema, options)
-    if (!valid) {
-      throw new Error(msg)
+    const res = this.validate(data, schema, options)
+    if (!res.valid) {
+      throw new Error(res.getErrorMessage())
     }
 
     const properties = schema.properties

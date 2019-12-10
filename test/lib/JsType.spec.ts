@@ -63,19 +63,19 @@ describe('StringType', () => {
   const stringType = new StringType(JsDataTypes)
   describe('validate', () => {
     it('should return true for valid string', () => {
-      const [res1] = stringType.validate('string', { type: 'string' })
-      expect(res1).toBeTruthy()
-      const [res2] = stringType.validate('test@test.com', { type: 'string', format: 'email' })
-      expect(res2).toBeTruthy()
-      const [res3] = stringType.validate(undefined, { type: 'string', format: 'email' })
-      expect(res3).toBeTruthy()
+      const res1 = stringType.validate('string', { type: 'string' })
+      expect(res1.valid).toBeTruthy()
+      const res2 = stringType.validate('test@test.com', { type: 'string', format: 'email' })
+      expect(res2.valid).toBeTruthy()
+      const res3 = stringType.validate(undefined, { type: 'string', format: 'email' })
+      expect(res3.valid).toBeTruthy()
     })
     it('should return false with error message for invalid value', () => {
-      const [res1, msg] = stringType.validate(1, { type: 'string' })
-      expect(res1).toBeFalsy()
-      expect(msg).not.toBeUndefined()
-      const [res2] = stringType.validate('test.com', { type: 'string', format: 'email' })
-      expect(res2).toBeFalsy()
+      const res1 = stringType.validate(1, { type: 'string' })
+      expect(res1.valid).toBeFalsy()
+      expect(res1.error).not.toBeUndefined()
+      const res2 = stringType.validate('test.com', { type: 'string', format: 'email' })
+      expect(res2.valid).toBeFalsy()
     })
   })
   describe('serialize', () => {
@@ -147,12 +147,12 @@ describe('DateType', () => {
   const dateType = new DateType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
-      const [res1] = dateType.validate(new Date())
-      expect(res1).toBeTruthy()
-      const [res2] = dateType.validate('2019-07-21')
-      expect(res2).toBeFalsy()
-      const [res3] = dateType.validate({ time: '2019-07-21' })
-      expect(res3).toBeFalsy()
+      const res1 = dateType.validate(new Date())
+      expect(res1.valid).toBeTruthy()
+      const res2 = dateType.validate('2019-07-21')
+      expect(res2.valid).toBeFalsy()
+      const res3 = dateType.validate({ time: '2019-07-21' })
+      expect(res3.valid).toBeFalsy()
     })
   })
   describe('serialize', () => {
@@ -232,26 +232,47 @@ describe('ArrayType', () => {
   const arrayType = new ArrayType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
-      const [res1] = arrayType.validate(['item1', 1, true], { type: 'array' })
-      expect(res1).toBeTruthy()
-      const [res2] = arrayType.validate(['item1', 'string'], { type: 'array', items: { type: 'string' } })
-      expect(res2).toBeTruthy()
-      const [res3] = arrayType.validate(['item1', 'string', 1], { type: 'array', items: { type: 'string' } })
-      expect(res3).toBeFalsy()
-      const [res4] = arrayType.validate({ time: '2019-07-21' }, { type: 'array' })
-      expect(res4).toBeFalsy()
-      const [res5] = arrayType.validate(undefined, { type: 'array' })
-      expect(res5).toBeTruthy()
-      const [res6] = arrayType.validate(['item1', true, 1], {
+      const vr = arrayType.validate(
+        [
+          { bar: true, foo: 1, other: { foo: 'num' } },
+          { bar: true, foo: 1, other: { foo: true } }
+        ],
+        {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              foo: { type: 'integer' },
+              bar: { type: 'boolean' },
+              other: { type: 'object', properties: { foo: { type: 'string' } } }
+            },
+            required: ['foo']
+          }
+        }
+      )
+      expect(vr.valid).toBeFalsy()
+      expect(vr.getErrorMessage()).toBe('[1].other.foo: data should be string')
+
+      const res1 = arrayType.validate(['item1', 1, true], { type: 'array' })
+      expect(res1.valid).toBeTruthy()
+      const res2 = arrayType.validate(['item1', 'string'], { type: 'array', items: { type: 'string' } })
+      expect(res2.valid).toBeTruthy()
+      const res3 = arrayType.validate(['item1', 'string', 1], { type: 'array', items: { type: 'string' } })
+      expect(res3.valid).toBeFalsy()
+      const res4 = arrayType.validate({ time: '2019-07-21' }, { type: 'array' })
+      expect(res4.valid).toBeFalsy()
+      const res5 = arrayType.validate(undefined, { type: 'array' })
+      expect(res5.valid).toBeTruthy()
+      const res6 = arrayType.validate(['item1', true, 1], {
         type: 'array',
         items: [{ type: 'string' }, { type: 'boolean' }, { type: 'integer' }]
       })
-      expect(res6).toBeTruthy()
-      const [res7] = arrayType.validate(['item1', 0, 1], {
+      expect(res6.valid).toBeTruthy()
+      const res7 = arrayType.validate(['item1', 0, 1], {
         type: 'array',
         items: [{ type: 'string' }, { type: 'boolean' }, { type: 'integer' }]
       })
-      expect(res7).toBeFalsy()
+      expect(res7.valid).toBeFalsy()
     })
   })
   describe('serialize', () => {
@@ -344,9 +365,9 @@ describe('ObjectType', () => {
   const objectType = new ObjectType(JsDataTypes)
   describe('validate', () => {
     it('should validate the value', () => {
-      const [res1] = objectType.validate({ foo: 'bar', age: 12 }, { type: 'object' })
-      expect(res1).toBeTruthy()
-      const [res2] = objectType.validate(
+      const res1 = objectType.validate({ foo: 'bar', age: 12 }, { type: 'object' })
+      expect(res1.valid).toBeTruthy()
+      const res2 = objectType.validate(
         { foo: 1, bar: true, other: { foo: 'bar' } },
         {
           type: 'object',
@@ -358,8 +379,9 @@ describe('ObjectType', () => {
           required: ['foo']
         }
       )
-      expect(res2).toBeTruthy()
-      const [res3] = objectType.validate(
+      expect(res2.valid).toBeTruthy()
+
+      const res3 = objectType.validate(
         {},
         {
           type: 'object',
@@ -369,17 +391,17 @@ describe('ObjectType', () => {
           }
         }
       )
-      expect(res3).toBeTruthy()
-      const [res4] = objectType.validate(undefined, { type: 'object' })
-      expect(res4).toBeTruthy()
+      expect(res3.valid).toBeTruthy()
+      const res4 = objectType.validate(undefined, { type: 'object' })
+      expect(res4.valid).toBeTruthy()
 
-      const [res5] = objectType.validate('item1', {
+      const res5 = objectType.validate('item1', {
         type: 'object',
         properties: { foo: { type: 'string' } },
         required: ['foo']
       })
-      expect(res5).toBeFalsy()
-      const [res6] = objectType.validate(
+      expect(res5.valid).toBeFalsy()
+      const res6 = objectType.validate(
         { bar: 1 },
         {
           type: 'object',
@@ -387,8 +409,8 @@ describe('ObjectType', () => {
           required: ['foo']
         }
       )
-      expect(res6).toBeFalsy()
-      const [res7] = objectType.validate(
+      expect(res6.valid).toBeFalsy()
+      const res7 = objectType.validate(
         { bar: true, foo: 'ok' },
         {
           type: 'object',
@@ -396,7 +418,7 @@ describe('ObjectType', () => {
           required: ['foo']
         }
       )
-      expect(res7).toBeFalsy()
+      expect(res7.valid).toBeFalsy()
     })
   })
   describe('serialize', () => {
