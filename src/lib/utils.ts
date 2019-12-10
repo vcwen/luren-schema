@@ -3,6 +3,7 @@ import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor, IJsSchema } from '../types'
 import { IJsTypeOptions } from './JsType'
+import { Tuple } from './Tuple'
 
 export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
   const metadata = new SchemaMetadata(target.name, schema)
@@ -116,6 +117,14 @@ export const convertSimpleSchemaToJsSchema = (
       const [itemSchema] = convertSimpleSchemaToJsSchema(simpleSchema[0], preprocessor)
       propSchema.items = itemSchema
     }
+    return [propSchema, true]
+  } else if (simpleSchema instanceof Tuple) {
+    const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
+    const items = simpleSchema.items
+    propSchema.items = items.map((item) => {
+      const [s] = convertSimpleSchemaToJsSchema(item, preprocessor)
+      return s
+    })
     return [propSchema, true]
   } else if (typeof simpleSchema === 'object') {
     const jsSchema: IJsSchema = { type: 'object' }

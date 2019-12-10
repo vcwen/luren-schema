@@ -1,5 +1,6 @@
 // tslint:disable: max-classes-per-file
 import { Prop, Schema, utils } from '../../src'
+import { tuple } from '../../src/lib/Tuple'
 import { normalizeNullValue } from '../../src/lib/utils'
 
 describe('utils', () => {
@@ -68,6 +69,22 @@ describe('utils', () => {
       expect(schema6).toEqual([{ type: 'array' }, true])
       const schema7 = utils.convertSimpleSchemaToJsSchema([[], { minLength: 2 }])
       expect(schema7).toEqual([{ type: 'array', minLength: 2 }, true])
+    })
+    it('should convert tuple type', () => {
+      const schema4 = utils.convertSimpleSchemaToJsSchema(tuple(['integer']))
+      expect(schema4).toEqual([{ type: 'array', items: [{ type: 'integer' }] }, true])
+      const schema5 = utils.convertSimpleSchemaToJsSchema([tuple(['string']), { maxLength: 10 }])
+      expect(schema5).toEqual([{ type: 'array', items: [{ type: 'string' }], maxLength: 10 }, true])
+      expect(() => {
+        const schema6 = utils.convertSimpleSchemaToJsSchema(tuple([]))
+        expect(schema6).toEqual([{ type: 'array' }, true])
+      }).toThrowError()
+
+      const schema7 = utils.convertSimpleSchemaToJsSchema([tuple(['string', 'number', 'boolean']), { minLength: 2 }])
+      expect(schema7).toEqual([
+        { type: 'array', items: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }], minLength: 2 },
+        true
+      ])
     })
     it('should convert object type', () => {
       const schema8 = utils.convertSimpleSchemaToJsSchema({})
