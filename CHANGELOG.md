@@ -1,6 +1,13 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [0.1.0](https://github.com/vcwen/luren-schema/compare/v0.0.48...v0.1.0) (2019-12-10)
+
+
+### Features
+
+* **tuple:** add type tuple ([badad10](https://github.com/vcwen/luren-schema/commit/badad1080a4d1f4c6280fbe0915a3efd98e04f5c))
 
 <a name="0.0.48"></a>
 ## [0.0.48](https://github.com/vcwen/luren-schema/compare/v0.0.47...v0.0.48) (2019-08-23)
