@@ -34,8 +34,8 @@ describe('JsTypes', () => {
   })
   describe('validate', () => {
     it('validate the data', () => {
-      const [valid] = JsTypes.validate('string', { type: 'string' })
-      expect(valid).toBeTruthy()
+      const res = JsTypes.validate('string', { type: 'string' })
+      expect(res.valid).toBeTruthy()
     })
   })
   describe('serialize', () => {
