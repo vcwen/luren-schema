@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/vcwen/luren-schema/compare/v0.1.2...v0.1.3) (2019-12-12)
+
+
+### Bug Fixes
+
+* **simpletype:** add Tuple type ([3674676](https://github.com/vcwen/luren-schema/commit/367467610bb4639ee81717eb95c9692513c9efdd))
+
 ### [0.1.2](https://github.com/vcwen/luren-schema/compare/v0.1.1...v0.1.2) (2019-12-11)
 
 ### [0.1.1](https://github.com/vcwen/luren-schema/compare/v0.1.0...v0.1.1) (2019-12-11)
