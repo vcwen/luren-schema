@@ -1,3 +1,5 @@
+import Tuple from '../lib/Tuple'
+
 export type Constructor<T = any> = new (...args: any[]) => T
 
 export interface ICommonSchemaOptions {
@@ -48,6 +50,7 @@ export type SimpleType =
   | string
   // tslint:disable-next-line: ban-types
   | Function
+  | Tuple
   | { [prop: string]: SimpleType }
   // tslint:disable-next-line: ban-types
   | Array<string | Function | { [prop: string]: SimpleType }>
