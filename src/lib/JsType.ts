@@ -288,7 +288,8 @@ export class ArrayType extends JsType {
             const jsType = this.dataTypes.get(itemSchema[i].type)
             const res = jsType.validate(val[i], itemSchema[i], options)
             if (!res.valid) {
-              return new ValidationResult(false, new ValidationError(`[${i}]`, res.error?.message || ''))
+              const err = res.error!.chainProp(`[${i}]`)
+              return new ValidationResult(false, err)
             }
           }
         } else {
@@ -296,8 +297,8 @@ export class ArrayType extends JsType {
             const jsType = this.dataTypes.get(itemSchema.type)
             const res = jsType.validate(val[i], itemSchema, options)
             if (!res.valid) {
-              const propChain = res.error?.prop ? `[${i}].${res.error.prop}` : `[${i}]`
-              return new ValidationResult(false, new ValidationError(propChain, res.error?.message || ''))
+              const err = res.error!.chainProp(`[${i}]`)
+              return new ValidationResult(false, err)
             }
           }
         }
@@ -417,8 +418,7 @@ export class ObjectType extends JsType {
       const jsType = this.dataTypes.get(propSchema.type)
       const res = jsType.validate(value, propSchema, options)
       if (!res.valid) {
-        const propChain = res.error?.prop ? `${prop}.${res.error.prop}` : prop
-        return new ValidationResult(false, new ValidationError(propChain, res.error?.message || ''))
+        return new ValidationResult(false, res.error!.chainProp(prop))
       }
     }
     return ValidationResult.OK

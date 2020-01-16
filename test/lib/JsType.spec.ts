@@ -392,6 +392,7 @@ describe('ObjectType', () => {
         }
       )
       expect(res3.valid).toBeTruthy()
+      expect(res3.getErrorMessage()).toEqual('')
       const res4 = objectType.validate(undefined, { type: 'object' })
       expect(res4.valid).toBeTruthy()
 
@@ -401,6 +402,7 @@ describe('ObjectType', () => {
         required: ['foo']
       })
       expect(res5.valid).toBeFalsy()
+      expect(res5.getErrorMessage()).toEqual('Invalid object value: item1')
       const res6 = objectType.validate(
         { bar: 1 },
         {

@@ -33,7 +33,7 @@ describe('JsTypes', () => {
     })
   })
   describe('validate', () => {
-    it('validate the data', () => {
+    it('should validate the data', () => {
       const res = JsTypes.validate('string', { type: 'string' })
       expect(res.valid).toBeTruthy()
     })
