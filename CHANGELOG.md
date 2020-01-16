@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/vcwen/luren-schema/compare/v0.1.3...v0.1.4) (2020-01-16)
+
+
+### Bug Fixes
+
+* **validation_error:** fix toString & add chainProp ([63f06cf](https://github.com/vcwen/luren-schema/commit/63f06cfc84acde5afd29165a02436a0feb539190))
+
 ### [0.1.3](https://github.com/vcwen/luren-schema/compare/v0.1.2...v0.1.3) (2019-12-12)
 
 
