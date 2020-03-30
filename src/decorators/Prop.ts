@@ -2,14 +2,14 @@ import { Map } from 'immutable'
 import 'reflect-metadata'
 import { ALL_JS_SCHEMA_PROPS } from '../constants'
 import { MetadataKey } from '../constants/MetadataKey'
+import { IJsSchema } from '../lib/JsSchema'
 import { convertSimpleSchemaToJsSchema, copyProperties } from '../lib/utils'
-import { ICommonSchemaOptions, IJsSchema, SimpleType } from '../types'
+import { ICommonSchemaOptions, SimpleType } from '../types'
 
 export interface IPropOptions extends ICommonSchemaOptions {
   type?: SimpleType
   schema?: any
   required?: boolean
-  private?: boolean
 }
 
 export class PropMetadata {
@@ -38,9 +38,6 @@ const getPropMetadata = (
       metadata.required = propRequired
     }
   }
-  if (options.private) {
-    metadata.schema.private = options.private
-  }
   if (descriptor) {
     if (descriptor.get) {
       metadata.schema.virtual = true
@@ -52,7 +49,11 @@ const getPropMetadata = (
       throw new Error('Only setter is not allowed')
     }
   }
-  const schemaOptions = copyProperties({}, options, ALL_JS_SCHEMA_PROPS.filter((item) => item !== 'required'))
+  const schemaOptions = copyProperties(
+    {},
+    options,
+    ALL_JS_SCHEMA_PROPS.filter((item) => item !== 'required')
+  )
   Object.assign(metadata.schema, schemaOptions)
   return metadata
 }

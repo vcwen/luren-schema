@@ -25,7 +25,7 @@ describe('Prop', () => {
     class TestController {
       @Prop({ required: true, type: 'number' })
       public name!: string
-      @Prop({ private: true })
+      @Prop()
       public password!: string
       constructor(name: string) {
         this.name = name.toLocaleLowerCase()
@@ -44,8 +44,7 @@ describe('Prop', () => {
       expect.objectContaining({
         required: true,
         schema: {
-          type: 'string',
-          private: true
+          type: 'string'
         }
       })
     )

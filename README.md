@@ -15,7 +15,7 @@ Built-in  data types:
 class Person {
       @Prop({ required: true, type: 'string' })
       public name: string
-      @Prop({ private: true, required: true })
+      @Prop({ required: true })
       public password: string
       constructor(name: string, passowrd: string) {
         this.name = name
