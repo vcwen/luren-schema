@@ -1,34 +1,35 @@
-export interface IValidationError {
+export interface IValidationError extends Error {
   prop?: string
-  message?: string
   chainProp(prop: string): IValidationError
-  toString(): string
 }
 
-export class ValidationError implements IValidationError {
+export class ValidationError extends Error implements IValidationError {
   public prop?: string
-  public message: string
   constructor(message: string)
   // tslint:disable-next-line: unified-signatures
   constructor(prop: string, message: string)
   constructor(...args: string[]) {
+    let prop: string | undefined
+    let message: string
     if (args.length === 1) {
-      this.message = args[0]
+      message = args[0]
     } else {
-      this.prop = args[0]
-      this.message = args[1]
+      prop = args[0]
+      message = args[1]
+      message = prop ? `${prop}: ${message}` : message
     }
+    super(message)
+    this.prop = prop
   }
   public chainProp(prop: string) {
     if (this.prop) {
       this.prop = `${prop}.${this.prop}`
+      this.message = `${prop}.${this.message}`
     } else {
       this.prop = prop
+      this.message = `${prop}: ${this.message}`
     }
     return this
-  }
-  public toString() {
-    return this.prop ? `${this.prop}: ${this.message}` : this.message
   }
 }
 
