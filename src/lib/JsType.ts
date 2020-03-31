@@ -17,6 +17,7 @@ export interface IJsTypeOptions {
   includeProps?: string[]
   excludeProps?: string[]
   onlyProps?: string[]
+  highPriority?: 'include' | 'exclude'
 }
 
 export interface IJsTypeHelper {

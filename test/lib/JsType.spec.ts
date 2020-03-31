@@ -493,7 +493,7 @@ describe('ObjectType', () => {
         },
         { include: ['virtual'] }
       )
-      expect(val1).toEqual({ bar: true })
+      expect(val1).toEqual({ foo: 1, bar: true })
     })
     it('should use default value when value is undefined', () => {
       expect(objectType.serialize(undefined, { type: 'object', default: { foo: 'bar' } })).toEqual({ foo: 'bar' })
@@ -658,8 +658,8 @@ describe('ObjectType', () => {
       )
       expect(jsonSchema5).toEqual({
         type: 'object',
-        properties: { foo: { type: 'string' }, bar: { type: 'number' } },
-        required: ['foo', 'bar'],
+        properties: { foo: { type: 'string' }, bar: { type: 'number' }, thing: { type: 'object' } },
+        required: ['foo', 'bar', 'thing'],
         additionalProperties: true
       })
     })

@@ -29,7 +29,7 @@ describe('JsTypes', () => {
       JsTypes.update('string', { type: 'new_string' } as any)
       const newType = JsTypes.get('string')
       expect(newType.type).toBe('new_string')
-      JsTypes.update('string', new StringType(JsTypes))
+      JsTypes.update('string', new StringType())
     })
   })
   describe('validate', () => {

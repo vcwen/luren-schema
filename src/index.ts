@@ -1,4 +1,5 @@
-export { IJsSchema, IJsonSchema, SimpleType } from './types'
+export { IJsonSchema, SimpleType } from './types'
+export { IJsSchema } from './lib/JsSchema'
 export { IPropOptions, Prop, PropMetadata } from './decorators/Prop'
 export { ISchemaOptions, Schema, SchemaMetadata } from './decorators/Schema'
 import * as utils from './lib/utils'

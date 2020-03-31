@@ -1,6 +1,6 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
-import { IJsSchema } from '../types'
+import { IJsSchema } from './JsSchema'
 import { IJsType, IJsTypeOptions } from './JsType'
 import ValidationResult from './ValidationResult'
 

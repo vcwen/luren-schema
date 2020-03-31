@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
-import { Constructor, IJsSchema } from '../types'
+import { Constructor } from '../types'
+import { IJsSchema } from './JsSchema'
 import { IJsTypeOptions } from './JsType'
 import { Tuple } from './Tuple'
 
@@ -12,7 +13,7 @@ export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
 
 export const getJsSchema = (target: object | Constructor) => {
   const targetObj = typeof target === 'object' ? Reflect.getPrototypeOf(target) : target.prototype
-  const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(MetadataKey.SCHEMA, targetObj)
+  const metadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, targetObj)
   if (metadata) {
     return metadata.schema
   } else {
@@ -162,25 +163,6 @@ export const copyProperties = (target: object, source: object, props: string[]) 
   return target
 }
 
-const SCHEMA_PROPERTIES_PRIORITY = {
-  private: 1,
-  virtual: 2,
-  readonly: 2
-}
-
-const getSchemaPropPriority = (prop: string) => {
-  switch (prop) {
-    case 'private':
-      return SCHEMA_PROPERTIES_PRIORITY[prop]
-    case 'virtual':
-      return SCHEMA_PROPERTIES_PRIORITY[prop]
-    case 'readonly':
-      return SCHEMA_PROPERTIES_PRIORITY[prop]
-    default:
-      throw new Error(`Unknown schema prop:${prop}`)
-  }
-}
-
 export const getInclusiveProps = (objectSchema: IJsSchema, options?: IJsTypeOptions): string[] => {
   if (objectSchema.type !== 'object') {
     throw new Error('getInclusiveProps only works with object schema')
@@ -200,39 +182,38 @@ export const getInclusiveProps = (objectSchema: IJsSchema, options?: IJsTypeOpti
   const exclude = options.exclude || []
   const includeProps = options.includeProps || []
   const excludeProps = options.excludeProps || []
-  let props = allProps.filter((prop) => {
-    const propSchema = properties[prop]
-    let highestExcludePriority: number = 0
-    let highestIncludePriority: number = 0
-    exclude.forEach((item) => {
-      if (Reflect.get(propSchema, item)) {
-        const priority = getSchemaPropPriority(item)
-        if (!highestExcludePriority || priority < highestExcludePriority) {
-          highestExcludePriority = priority
-        }
-      }
-    })
-    include.forEach((item) => {
-      if (Reflect.get(propSchema, item)) {
-        const priority = getSchemaPropPriority(item)
-        if (!highestIncludePriority || priority < highestIncludePriority) {
-          highestIncludePriority = priority
-        }
-      }
-    })
-    if (!highestExcludePriority) {
+  const highPriority = options.highPriority ?? 'exclude'
+  if (highPriority === 'exclude') {
+    includeProps.filter((item) => !excludeProps.includes(item))
+  } else {
+    excludeProps.filter((item) => !includeProps.includes(item))
+  }
+  const props = allProps.filter((prop) => {
+    if (includeProps.includes(prop)) {
       return true
-    } else {
-      if (highestIncludePriority) {
-        return highestIncludePriority <= highestExcludePriority
-      } else {
-        return false
+    }
+    if (excludeProps.includes(prop)) {
+      return false
+    }
+    const propSchema = properties[prop]
+    let shouldInclude = true
+    let shouldExclude = false
+    for (const item of exclude) {
+      if (Reflect.get(propSchema, item)) {
+        shouldExclude = true
       }
     }
+    for (const item of include) {
+      if (Reflect.get(propSchema, item)) {
+        shouldInclude = true
+      }
+    }
+    if (highPriority === 'exclude') {
+      return !shouldExclude
+    } else {
+      return shouldInclude
+    }
   })
-  props = _.difference(props, excludeProps)
-  props = _.uniq(_.union(props, includeProps))
-  props = _.intersection(props, allProps)
   return props
 }
 
@@ -265,4 +246,155 @@ export const normalizeNullValue = (value: any) => {
     }
   }
   return value
+}
+
+type Props = number | string | Props[] | { [prop: string]: Props }
+// when val is set that mean the prop is a key
+export const normalizeStringProp = (prop: string, val?: Props) => {
+  const originProp = prop
+  prop = prop.replace(arraySymbolRegex, '.')
+  prop = prop.replace(dotTrimRegex, '')
+  if (prop.includes('.')) {
+    const propsInArray = prop.split('.')
+    if (propsInArray.length === 2) {
+      if (val) {
+        return { [propsInArray[0]]: { [propsInArray[1]]: val } }
+      } else {
+        return { [propsInArray[0]]: propsInArray[1] }
+      }
+    } else if (propsInArray.length > 2) {
+      const propsInObject: Props = {}
+      let parent = propsInObject
+      let parentKey: string = propsInArray[0]
+      for (let i = 1; i < propsInArray.length - 2; i++) {
+        const obj = {}
+        Reflect.set(parent, propsInArray[i], obj)
+        parent = obj
+        parentKey = propsInArray[i]
+      }
+      if (val) {
+        parent[parentKey] = {
+          [propsInArray[propsInArray.length - 2]]: { [propsInArray[propsInArray.length - 1]]: val }
+        }
+      } else {
+        parent[parentKey] = { [propsInArray[propsInArray.length - 2]]: propsInArray[propsInArray.length - 1] }
+      }
+      return propsInObject as Props
+    } else {
+      throw new Error(`Invalid prop ${originProp}`)
+    }
+  } else {
+    if (val) {
+      return { [prop]: val }
+    } else {
+      return prop
+    }
+  }
+}
+
+const arraySymbolRegex = new RegExp('[\\[|\\]]', 'g')
+const dotTrimRegex = new RegExp(/(^\.)|(\.$)/, 'g')
+export const normalizeProps = (props: Props): Props => {
+  if (typeof props === 'number') {
+    return props.toString()
+  } else if (typeof props === 'string') {
+    return normalizeStringProp(props) as string
+  } else if (Array.isArray(props)) {
+    return (props as any[]).map((prop) => normalizeProps(prop))
+  } else {
+    const propsObj: Props = {}
+    const keys = Object.keys(props)
+    for (const key of keys) {
+      Object.assign(propsObj, normalizeStringProp(key, normalizeProps(props[key])))
+    }
+    return propsObj
+  }
+}
+
+export const includeSchemaProps = (schema: IJsSchema, props: Props): IJsSchema => {
+  const newSchema: IJsSchema = { ...schema }
+  if (schema.type === 'array') {
+    if (schema.items) {
+      // tuple
+      if (Array.isArray(schema.items)) {
+        const items: IJsSchema[] = []
+        if (Array.isArray(props)) {
+          for (let i = 0; i < props.length; i++) {
+            if (typeof props[i] === 'number') {
+              items.push(schema.items[props[i] as number])
+            } else {
+              items.push(includeSchemaProps(schema.items[i], props[i]))
+            }
+          }
+        } else if (typeof props === 'number') {
+          items.push(Reflect.get(items, props))
+        } else if (typeof props === 'string') {
+          const parsed = Number.parseInt(props, 10)
+          if (Number.isNaN(parsed)) {
+            throw new Error('Only index or array is valid for tuple type')
+          } else {
+            items.push(Reflect.get(items, props))
+          }
+        } else {
+          throw new Error('Only index or array is valid for tuple type')
+        }
+        newSchema.items = items
+      } else {
+        newSchema.items = includeSchemaProps(schema.items, props)
+      }
+    } else {
+      throw new Error(`can not include ${JSON.stringify(props)} in a type unspecified array`)
+    }
+  } else if (schema.type === 'object') {
+    if (schema.properties) {
+      const properties: { [key: string]: IJsSchema } = {}
+      if (typeof props === 'string' || typeof props === 'number') {
+        properties[props] = schema.properties[props]
+      } else if (Array.isArray(props)) {
+        for (const p of props) {
+          if (typeof p === 'object') {
+            const keys = Object.keys(p)
+            for (const key of keys) {
+              properties[key] = includeSchemaProps(schema.properties[key], Reflect.get(p, key))
+            }
+          } else {
+            properties[p] = schema.properties[p]
+          }
+        }
+      } else {
+        const propNames = Object.keys(props)
+        for (const pn of propNames) {
+          properties[pn] = includeSchemaProps(schema.properties[pn], props[pn])
+        }
+      }
+      newSchema.properties = properties
+      if (newSchema.required) {
+        newSchema.required = _.intersection(newSchema.required, Object.keys(properties))
+      }
+    } else {
+      throw new Error(`can not include ${JSON.stringify(props)} in a object without properties specified`)
+    }
+  } else {
+    throw new Error(`can not include ${JSON.stringify(props)} in ${schema.type}`)
+  }
+  return newSchema
+}
+
+export interface ITransformOptions {
+  include?: Props
+  exclude?: Props
+}
+
+export const transformSchema = (schema: IJsSchema | Constructor, options: ITransformOptions) => {
+  if (typeof schema === 'function') {
+    const clazz = schema
+    schema = Reflect.getMetadata(MetadataKey.SCHEMA, schema) as IJsSchema
+    if (!schema) {
+      throw new Error(`${clazz.name} doesn't have schema defined on it`)
+    }
+  }
+  if (options.include) {
+    schema = includeSchemaProps(schema, normalizeProps(options.include))
+  }
+  return schema
 }

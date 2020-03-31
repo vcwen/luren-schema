@@ -3,8 +3,9 @@ import _ from 'lodash'
 import 'reflect-metadata'
 import { ALL_JS_SCHEMA_PROPS } from '../constants'
 import { MetadataKey } from '../constants/MetadataKey'
+import { IJsSchema } from '../lib/JsSchema'
 import { copyProperties } from '../lib/utils'
-import { Constructor, ICommonSchemaOptions, IJsSchema } from '../types'
+import { Constructor, ICommonSchemaOptions } from '../types'
 import { PropMetadata } from './Prop'
 
 export interface ISchemaOptions extends ICommonSchemaOptions {

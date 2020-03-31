@@ -177,12 +177,12 @@ describe('utils', () => {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          foo: { type: 'number', private: true },
+          foo: { type: 'number' },
           fullName: { type: 'string', virtual: true }
         }
       }
       expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
-      expect(utils.getInclusiveProps(schema, { exclude: ['private'] })).toEqual(['name', 'fullName'])
+      expect(utils.getInclusiveProps(schema)).toEqual(['name', 'foo', 'fullName'])
       expect(utils.getInclusiveProps(schema, { onlyProps: ['fullName'] })).toEqual(['fullName'])
       expect(utils.getInclusiveProps(schema, {})).toEqual(['name', 'foo', 'fullName'])
     })
@@ -191,7 +191,7 @@ describe('utils', () => {
         {
           type: 'object'
         },
-        { include: ['private', 'virtual'] }
+        { include: ['virtual'] }
       )
       expect(props).toEqual([])
     })
@@ -200,48 +200,36 @@ describe('utils', () => {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          foo: { type: 'number', private: true, virtual: true, readonly: true },
+          foo: { type: 'number', virtual: true, readonly: true },
           fullName: { type: 'string', virtual: true, readonly: true }
         }
       }
-      expect(utils.getInclusiveProps(schema, { include: ['virtual'], exclude: ['readonly'] })).toEqual([
-        'name',
-        'foo',
-        'fullName'
-      ])
-      expect(utils.getInclusiveProps(schema, { exclude: ['private'], include: ['virtual'] })).toEqual([
-        'name',
-        'fullName'
-      ])
-      expect(utils.getInclusiveProps(schema, { exclude: ['readonly', 'private'], include: ['virtual'] })).toEqual([
-        'name',
-        'fullName'
-      ])
-      expect(utils.getInclusiveProps(schema, { include: ['readonly', 'private'], exclude: ['virtual'] })).toEqual([
-        'name',
-        'foo',
-        'fullName'
-      ])
+      expect(utils.getInclusiveProps(schema, { include: ['virtual'], exclude: ['readonly'] })).toEqual(['name'])
+      expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
+      expect(
+        utils.getInclusiveProps(schema, { exclude: ['readonly'], include: ['virtual'], highPriority: 'include' })
+      ).toEqual(['name', 'foo', 'fullName'])
+      expect(utils.getInclusiveProps(schema, { include: ['readonly'], exclude: ['virtual'] })).toEqual(['name'])
     })
     it('should throw error if schema type is not object', () => {
       expect(() => {
-        utils.getInclusiveProps({ type: 'array' }, { exclude: ['private'] })
+        utils.getInclusiveProps({ type: 'array' })
       }).toThrowError()
     })
-    it('should throw error if schema prop is not valid', () => {
-      expect(() => {
+    it('should ignore invalid props in options', () => {
+      expect(
         utils.getInclusiveProps(
           {
             type: 'object',
             properties: {
               name: { type: 'string' },
-              foo: { type: 'number', private: true, virtual: true, foo: true },
+              foo: { type: 'number', virtual: true, foo: true },
               fullName: { type: 'string', virtual: true, readonly: true }
             }
           },
           { exclude: ['bar', 'foo'] }
         )
-      }).toThrowError()
+      ).toEqual(['name', 'fullName'])
     })
   })
   describe('setErrorMessagePrefix', () => {

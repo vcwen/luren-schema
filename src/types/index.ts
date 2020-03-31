@@ -32,20 +32,6 @@ export interface IJsonSchema extends ICommonSchemaOptions {
   [prop: string]: any
 }
 
-export interface IJsSchema {
-  type: string
-  pattern?: string
-  properties?: { [prop: string]: IJsSchema }
-  items?: IJsSchema | IJsSchema[]
-  private?: boolean
-  virtual?: boolean
-  readonly?: boolean
-  required?: string[]
-  classConstructor?: Constructor<any>
-  default?: any
-  [prop: string]: any
-}
-
 export type SimpleType =
   | string
   // tslint:disable-next-line: ban-types
