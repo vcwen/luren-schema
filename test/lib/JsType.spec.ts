@@ -13,7 +13,7 @@ import {
 import JsDataTypes from '../../src/lib/JsTypes'
 
 describe('AnyType', () => {
-  const anyType = new AnyType(JsDataTypes)
+  const anyType = new AnyType()
   describe('validate', () => {
     it('should return true for all data', () => {
       expect(anyType.validate(undefined)).toBeTruthy()
@@ -60,7 +60,7 @@ describe('AnyType', () => {
 })
 
 describe('StringType', () => {
-  const stringType = new StringType(JsDataTypes)
+  const stringType = new StringType()
   describe('validate', () => {
     it('should return true for valid string', () => {
       const res1 = stringType.validate('string', { type: 'string' })
@@ -123,7 +123,6 @@ describe('StringType', () => {
       type: 'string',
       format: 'email',
       pattern: 'test',
-      private: true,
       virtual: true
     })
     expect(jsonSchema).toEqual({ type: 'string', format: 'email', pattern: 'test' })
@@ -131,20 +130,20 @@ describe('StringType', () => {
 })
 
 describe('BooleanType', () => {
-  const booleanType = new BooleanType(JsDataTypes)
+  const booleanType = new BooleanType()
   expect(booleanType.type).toBe('boolean')
 })
 
 describe('NumberType', () => {
-  const booleanType = new NumberType(JsDataTypes)
+  const booleanType = new NumberType()
   expect(booleanType.type).toBe('number')
 })
 describe('IntegerType', () => {
-  const booleanType = new IntegerType(JsDataTypes)
+  const booleanType = new IntegerType()
   expect(booleanType.type).toBe('integer')
 })
 describe('DateType', () => {
-  const dateType = new DateType(JsDataTypes)
+  const dateType = new DateType()
   describe('validate', () => {
     it('should validate the value', () => {
       const res1 = dateType.validate(new Date())
@@ -251,7 +250,7 @@ describe('ArrayType', () => {
         }
       )
       expect(vr.valid).toBeFalsy()
-      expect(vr.getErrorMessage()).toBe('[1].other.foo: data should be string')
+      expect(vr.error!.message).toBe('[1].other.foo: data should be string')
 
       const res1 = arrayType.validate(['item1', 1, true], { type: 'array' })
       expect(res1.valid).toBeTruthy()
@@ -392,7 +391,6 @@ describe('ObjectType', () => {
         }
       )
       expect(res3.valid).toBeTruthy()
-      expect(res3.getErrorMessage()).toEqual('')
       const res4 = objectType.validate(undefined, { type: 'object' })
       expect(res4.valid).toBeTruthy()
 
@@ -402,7 +400,7 @@ describe('ObjectType', () => {
         required: ['foo']
       })
       expect(res5.valid).toBeFalsy()
-      expect(res5.getErrorMessage()).toEqual('Invalid object value: item1')
+      expect(res5.error!.message).toEqual('Invalid object value: item1')
       const res6 = objectType.validate(
         { bar: 1 },
         {
@@ -488,12 +486,12 @@ describe('ObjectType', () => {
         {
           type: 'object',
           properties: {
-            foo: { type: 'number', private: true },
+            foo: { type: 'number' },
             bar: { type: 'boolean', virtual: true },
             other: { type: 'string' }
           }
         },
-        { exclude: ['private'], include: ['virtual'] }
+        { include: ['virtual'] }
       )
       expect(val1).toEqual({ bar: true })
     })
@@ -651,12 +649,12 @@ describe('ObjectType', () => {
           properties: {
             foo: { type: 'string' },
             bar: { type: 'number', virtual: true },
-            thing: { type: 'object', private: true }
+            thing: { type: 'object' }
           },
           required: ['foo', 'bar', 'thing'],
           additionalProperties: true
         },
-        { exclude: ['private'], include: ['virtual'] }
+        { include: ['virtual'] }
       )
       expect(jsonSchema5).toEqual({
         type: 'object',

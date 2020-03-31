@@ -2,8 +2,9 @@ import Ajv = require('ajv')
 import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
-import { IJsonSchema, IJsSchema } from '../types'
+import { IJsonSchema } from '../types'
 import { DataTypes } from './DataTypes'
+import { IJsSchema } from './JsSchema'
 import { copyProperties, getInclusiveProps, normalizeNullValue } from './utils'
 import ValidationError from './ValidationError'
 import ValidationResult, { IValidationResult } from './ValidationResult'
@@ -33,10 +34,6 @@ export interface IJsType {
 
 export abstract class JsType implements IJsType {
   public abstract type: string
-  protected dataTypes: DataTypes
-  constructor(dataTypes: DataTypes) {
-    this.dataTypes = dataTypes
-  }
   public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): IValidationResult {
     if (_.isNil(value)) {
       return ValidationResult.OK
@@ -54,7 +51,7 @@ export abstract class JsType implements IJsType {
   public serialize(value: any | undefined, schema: IJsSchema, _1?: IJsTypeOptions): any {
     const res = this.validate(value, schema)
     if (!res.valid) {
-      throw new Error(res.getErrorMessage())
+      throw res.error!
     }
     if (_.isNil(value)) {
       return this.getDefaultValue(schema)
@@ -88,9 +85,18 @@ export abstract class JsType implements IJsType {
       if (res.valid) {
         return value
       } else {
-        throw new Error(res.getErrorMessage())
+        throw res.error!
       }
     }
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export abstract class JsCompositeType extends JsType {
+  protected dataTypes: DataTypes
+  constructor(dataTypes: DataTypes) {
+    super()
+    this.dataTypes = dataTypes
   }
 }
 
@@ -182,7 +188,7 @@ export class DateType extends JsType {
   public serialize(value: any | undefined, schema: IJsSchema) {
     const res = this.validate(value)
     if (!res.valid) {
-      throw new Error(res.getErrorMessage())
+      throw res.error!
     }
     if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
@@ -250,7 +256,7 @@ export class DateType extends JsType {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class ArrayType extends JsType {
+export class ArrayType extends JsCompositeType {
   public type: string = 'array'
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'array' }
@@ -311,7 +317,7 @@ export class ArrayType extends JsType {
   public serialize(value: any, schema: IJsSchema, options?: IJsTypeOptions) {
     const res = this.validate(value, schema, options)
     if (!res.valid) {
-      throw new Error(res.getErrorMessage())
+      throw res.error!
     }
     if (_.isNil(value)) {
       value = this.getDefaultValue(schema)
@@ -373,7 +379,7 @@ export class ArrayType extends JsType {
   }
 }
 // tslint:disable-next-line: max-classes-per-file
-export class ObjectType extends JsType {
+export class ObjectType extends JsCompositeType {
   public type: string = 'object'
   public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
     const jsonSchema: IJsonSchema = { type: 'object' }
@@ -432,7 +438,7 @@ export class ObjectType extends JsType {
     }
     const res = this.validate(data, schema, options)
     if (!res.valid) {
-      throw new Error(res.getErrorMessage())
+      throw res.error
     }
 
     const properties = schema.properties
