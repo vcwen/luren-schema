@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/vcwen/luren-schema/compare/v0.0.46...v0.2.0) (2020-06-23)
+
+
+### Features
+
+* **tuple:** add type tuple ([40acc09](https://github.com/vcwen/luren-schema/commit/40acc09cc9556721cb0b494e2ed9bec9e93033ae))
+
+
+### Bug Fixes
+
+* **JsType:** set ajv useDefaults true ([fd094c7](https://github.com/vcwen/luren-schema/commit/fd094c7ebb12a933f783aef07973d6e53c4af6c4))
+* **simpletype:** add Tuple type ([3674676](https://github.com/vcwen/luren-schema/commit/367467610bb4639ee81717eb95c9692513c9efdd))
+* **validation_error:** fix toString & add chainProp ([63f06cf](https://github.com/vcwen/luren-schema/commit/63f06cfc84acde5afd29165a02436a0feb539190))
+
 ### [0.1.5](https://github.com/vcwen/luren-schema/compare/v0.0.46...v0.1.5) (2020-06-23)
 
 
