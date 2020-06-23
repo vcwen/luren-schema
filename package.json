@@ -27,6 +27,9 @@
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.9.5"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.com"
+  },
   "engines": {
     "node": ">= 10"
   }
