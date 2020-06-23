@@ -1,5 +1,5 @@
 # .prettierrc
-printWidth: 120
+printWidth: 80
 parser: typescript
 bracketSpacing: true
 singleQuote: true
