@@ -1,7 +1,7 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
 import { IJsSchema } from './JsSchema'
-import { IJsType, IJsTypeOptions } from './JsType'
+import { IJsType } from './JsType'
 import ValidationResult from './ValidationResult'
 
 export class DataTypes<T extends IJsType = IJsType> {

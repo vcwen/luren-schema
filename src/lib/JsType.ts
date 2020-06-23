@@ -5,10 +5,9 @@ import { ALL_COMMON_SCHEMA_PROPS } from '../constants'
 import { IJsonSchema } from '../types'
 import { DataTypes } from './DataTypes'
 import { IJsSchema } from './JsSchema'
-import { copyProperties, getInclusiveProps, normalizeNullValue } from './utils'
-import ValidationError, { IValidationError } from './ValidationError'
+import { copyProperties } from './utils'
+import ValidationError from './ValidationError'
 import ValidationResult, { IValidationResult } from './ValidationResult'
-import { resolveSoa } from 'dns'
 
 const ajv = new Ajv({ useDefaults: true })
 
