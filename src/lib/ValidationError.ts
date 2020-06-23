@@ -19,6 +19,10 @@ export class ValidationError extends Error implements IValidationError {
       message = prop ? `${prop}: ${message}` : message
     }
     super(message)
+    this.name = 'ValidationError'
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ValidationError)
+    }
     this.prop = prop
   }
   public chainProp(prop: string) {

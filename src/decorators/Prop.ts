@@ -32,7 +32,9 @@ const getPropMetadata = (
   if (options.schema) {
     metadata.schema = options.schema
   } else {
-    const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(options.type || 'string')
+    const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(
+      options.type || 'string'
+    )
     metadata.schema = propSchema
     if (options.required === undefined) {
       metadata.required = propRequired
@@ -40,13 +42,12 @@ const getPropMetadata = (
   }
   if (descriptor) {
     if (descriptor.get) {
-      metadata.schema.virtual = true
       if (!descriptor.set) {
         metadata.schema.readonly = true
       }
     } else {
       // only setter
-      throw new Error('Only setter is not allowed')
+      throw new Error('Only setter of property is not allowed')
     }
   }
   const schemaOptions = copyProperties(
@@ -59,8 +60,13 @@ const getPropMetadata = (
 }
 
 export function Prop(options: IPropOptions = {}) {
-  return (target: object, propertyKey: string, descriptor?: TypedPropertyDescriptor<any>) => {
-    let metadataMap: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, target) || Map()
+  return (
+    target: object,
+    propertyKey: string,
+    descriptor?: TypedPropertyDescriptor<any>
+  ) => {
+    let metadataMap: Map<string, PropMetadata> =
+      Reflect.getMetadata(MetadataKey.PROPS, target) || Map()
     const metadata = getPropMetadata(options, target, propertyKey, descriptor)
     metadataMap = metadataMap.set(propertyKey, metadata)
     Reflect.defineMetadata(MetadataKey.PROPS, metadataMap, target)

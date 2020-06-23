@@ -1,5 +1,14 @@
 import DataTypes from './DataTypes'
-import { AnyType, ArrayType, BooleanType, DateType, IntegerType, NumberType, ObjectType, StringType } from './JsType'
+import {
+  AnyType,
+  ArrayType,
+  BooleanType,
+  DateType,
+  IntegerType,
+  NumberType,
+  ObjectType,
+  StringType
+} from './JsType'
 
 export const JsTypes = new DataTypes()
 JsTypes.register('any', new AnyType())

@@ -12,8 +12,14 @@ export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
 }
 
 export const getJsSchema = (target: object | Constructor) => {
-  const targetObj = typeof target === 'object' ? Reflect.getPrototypeOf(target) : target.prototype
-  const metadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, targetObj)
+  const targetObj =
+    typeof target === 'object'
+      ? Reflect.getPrototypeOf(target)
+      : target.prototype
+  const metadata: SchemaMetadata | undefined = Reflect.getOwnMetadata(
+    MetadataKey.SCHEMA,
+    targetObj
+  )
   if (metadata) {
     return metadata.schema
   } else {
@@ -62,7 +68,10 @@ export const convertSimpleSchemaToJsSchema = (
     // tslint:disable-next-line: ban-types
     preprocessor = (simSchema: any) => {
       if (typeof simSchema === 'function') {
-        const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(MetadataKey.SCHEMA, simSchema.prototype)
+        const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(
+          MetadataKey.SCHEMA,
+          simSchema.prototype
+        )
         if (schemaMetadata) {
           return schemaMetadata.schema
         }
@@ -115,7 +124,10 @@ export const convertSimpleSchemaToJsSchema = (
   } else if (Array.isArray(simpleSchema)) {
     const propSchema: any = Object.assign({ type: 'array' }, extraOptions)
     if (simpleSchema[0]) {
-      const [itemSchema] = convertSimpleSchemaToJsSchema(simpleSchema[0], preprocessor)
+      const [itemSchema] = convertSimpleSchemaToJsSchema(
+        simpleSchema[0],
+        preprocessor
+      )
       propSchema.items = itemSchema
     }
     return [propSchema, true]
@@ -133,7 +145,10 @@ export const convertSimpleSchemaToJsSchema = (
     const requiredProps = [] as string[]
     const props = Object.getOwnPropertyNames(simpleSchema)
     for (const prop of props) {
-      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(simpleSchema[prop], preprocessor)
+      const [propSchema, propRequired] = convertSimpleSchemaToJsSchema(
+        simpleSchema[prop],
+        preprocessor
+      )
       const [propName, required] = normalizeProp(prop)
       properties[propName] = propSchema
       if (required && propRequired) {
@@ -153,7 +168,11 @@ export const convertSimpleSchemaToJsSchema = (
   }
 }
 
-export const copyProperties = (target: object, source: object, props: string[]) => {
+export const copyProperties = (
+  target: object,
+  source: object,
+  props: string[]
+) => {
   for (const prop of props) {
     const value = Reflect.get(source, prop)
     if (!_.isNil(value)) {
@@ -163,7 +182,10 @@ export const copyProperties = (target: object, source: object, props: string[]) 
   return target
 }
 
-export const getInclusiveProps = (objectSchema: IJsSchema, options?: IJsTypeOptions): string[] => {
+export const getInclusiveProps = (
+  objectSchema: IJsSchema,
+  options: IJsTypeOptions = {}
+): string[] => {
   if (objectSchema.type !== 'object') {
     throw new Error('getInclusiveProps only works with object schema')
   }
@@ -171,49 +193,16 @@ export const getInclusiveProps = (objectSchema: IJsSchema, options?: IJsTypeOpti
     return []
   }
   const properties = objectSchema.properties
-  const allProps = Object.getOwnPropertyNames(properties)
-  if (!options || _.isEmpty(options)) {
-    return allProps
+  let props = Object.getOwnPropertyNames(properties)
+
+  const include = options.include
+  if (include && !_.isEmpty(include)) {
+    props = _.intersection(props, include)
   }
-  if (options.onlyProps) {
-    return options.onlyProps
+  const exclude = options.exclude
+  if (exclude) {
+    props = _.difference(props, exclude)
   }
-  const include = options.include || []
-  const exclude = options.exclude || []
-  const includeProps = options.includeProps || []
-  const excludeProps = options.excludeProps || []
-  const highPriority = options.highPriority ?? 'exclude'
-  if (highPriority === 'exclude') {
-    includeProps.filter((item) => !excludeProps.includes(item))
-  } else {
-    excludeProps.filter((item) => !includeProps.includes(item))
-  }
-  const props = allProps.filter((prop) => {
-    if (includeProps.includes(prop)) {
-      return true
-    }
-    if (excludeProps.includes(prop)) {
-      return false
-    }
-    const propSchema = properties[prop]
-    let shouldInclude = true
-    let shouldExclude = false
-    for (const item of exclude) {
-      if (Reflect.get(propSchema, item)) {
-        shouldExclude = true
-      }
-    }
-    for (const item of include) {
-      if (Reflect.get(propSchema, item)) {
-        shouldInclude = true
-      }
-    }
-    if (highPriority === 'exclude') {
-      return !shouldExclude
-    } else {
-      return shouldInclude
-    }
-  })
   return props
 }
 
@@ -274,10 +263,15 @@ export const normalizeStringProp = (prop: string, val?: Props) => {
       }
       if (val) {
         parent[parentKey] = {
-          [propsInArray[propsInArray.length - 2]]: { [propsInArray[propsInArray.length - 1]]: val }
+          [propsInArray[propsInArray.length - 2]]: {
+            [propsInArray[propsInArray.length - 1]]: val
+          }
         }
       } else {
-        parent[parentKey] = { [propsInArray[propsInArray.length - 2]]: propsInArray[propsInArray.length - 1] }
+        parent[parentKey] = {
+          [propsInArray[propsInArray.length - 2]]:
+            propsInArray[propsInArray.length - 1]
+        }
       }
       return propsInObject as Props
     } else {
@@ -305,13 +299,19 @@ export const normalizeProps = (props: Props): Props => {
     const propsObj: Props = {}
     const keys = Object.keys(props)
     for (const key of keys) {
-      Object.assign(propsObj, normalizeStringProp(key, normalizeProps(props[key])))
+      Object.assign(
+        propsObj,
+        normalizeStringProp(key, normalizeProps(props[key]))
+      )
     }
     return propsObj
   }
 }
 
-export const includeSchemaProps = (schema: IJsSchema, props: Props): IJsSchema => {
+export const includeSchemaProps = (
+  schema: IJsSchema,
+  props: Props
+): IJsSchema => {
   const newSchema: IJsSchema = { ...schema }
   if (schema.type === 'array') {
     if (schema.items) {
@@ -343,7 +343,9 @@ export const includeSchemaProps = (schema: IJsSchema, props: Props): IJsSchema =
         newSchema.items = includeSchemaProps(schema.items, props)
       }
     } else {
-      throw new Error(`can not include ${JSON.stringify(props)} in a type unspecified array`)
+      throw new Error(
+        `can not include ${JSON.stringify(props)} in a type unspecified array`
+      )
     }
   } else if (schema.type === 'object') {
     if (schema.properties) {
@@ -355,7 +357,10 @@ export const includeSchemaProps = (schema: IJsSchema, props: Props): IJsSchema =
           if (typeof p === 'object') {
             const keys = Object.keys(p)
             for (const key of keys) {
-              properties[key] = includeSchemaProps(schema.properties[key], Reflect.get(p, key))
+              properties[key] = includeSchemaProps(
+                schema.properties[key],
+                Reflect.get(p, key)
+              )
             }
           } else {
             properties[p] = schema.properties[p]
@@ -369,13 +374,22 @@ export const includeSchemaProps = (schema: IJsSchema, props: Props): IJsSchema =
       }
       newSchema.properties = properties
       if (newSchema.required) {
-        newSchema.required = _.intersection(newSchema.required, Object.keys(properties))
+        newSchema.required = _.intersection(
+          newSchema.required,
+          Object.keys(properties)
+        )
       }
     } else {
-      throw new Error(`can not include ${JSON.stringify(props)} in a object without properties specified`)
+      throw new Error(
+        `can not include ${JSON.stringify(
+          props
+        )} in a object without properties specified`
+      )
     }
   } else {
-    throw new Error(`can not include ${JSON.stringify(props)} in ${schema.type}`)
+    throw new Error(
+      `can not include ${JSON.stringify(props)} in ${schema.type}`
+    )
   }
   return newSchema
 }
@@ -385,7 +399,10 @@ export interface ITransformOptions {
   exclude?: Props
 }
 
-export const transformSchema = (schema: IJsSchema | Constructor, options: ITransformOptions) => {
+export const transformSchema = (
+  schema: IJsSchema | Constructor,
+  options: ITransformOptions
+) => {
   if (typeof schema === 'function') {
     const clazz = schema
     schema = Reflect.getMetadata(MetadataKey.SCHEMA, schema) as IJsSchema

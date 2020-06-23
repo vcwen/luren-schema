@@ -57,32 +57,63 @@ describe('utils', () => {
       expect(schema1).toEqual([{ type: 'string' }, true])
       const schema2 = utils.convertSimpleSchemaToJsSchema('integer?')
       expect(schema2).toEqual([{ type: 'integer' }, false])
-      const schema3 = utils.convertSimpleSchemaToJsSchema(['string?', { format: 'email' }])
+      const schema3 = utils.convertSimpleSchemaToJsSchema([
+        'string?',
+        { format: 'email' }
+      ])
       expect(schema3).toEqual([{ type: 'string', format: 'email' }, false])
     })
     it('should convert array type', () => {
       const schema4 = utils.convertSimpleSchemaToJsSchema(['integer'])
-      expect(schema4).toEqual([{ type: 'array', items: { type: 'integer' } }, true])
-      const schema5 = utils.convertSimpleSchemaToJsSchema([['string'], { maxLength: 10 }])
-      expect(schema5).toEqual([{ type: 'array', items: { type: 'string' }, maxLength: 10 }, true])
+      expect(schema4).toEqual([
+        { type: 'array', items: { type: 'integer' } },
+        true
+      ])
+      const schema5 = utils.convertSimpleSchemaToJsSchema([
+        ['string'],
+        { maxLength: 10 }
+      ])
+      expect(schema5).toEqual([
+        { type: 'array', items: { type: 'string' }, maxLength: 10 },
+        true
+      ])
       const schema6 = utils.convertSimpleSchemaToJsSchema([])
       expect(schema6).toEqual([{ type: 'array' }, true])
-      const schema7 = utils.convertSimpleSchemaToJsSchema([[], { minLength: 2 }])
+      const schema7 = utils.convertSimpleSchemaToJsSchema([
+        [],
+        { minLength: 2 }
+      ])
       expect(schema7).toEqual([{ type: 'array', minLength: 2 }, true])
     })
     it('should convert tuple type', () => {
       const schema4 = utils.convertSimpleSchemaToJsSchema(tuple(['integer']))
-      expect(schema4).toEqual([{ type: 'array', items: [{ type: 'integer' }] }, true])
-      const schema5 = utils.convertSimpleSchemaToJsSchema([tuple(['string']), { maxLength: 10 }])
-      expect(schema5).toEqual([{ type: 'array', items: [{ type: 'string' }], maxLength: 10 }, true])
+      expect(schema4).toEqual([
+        { type: 'array', items: [{ type: 'integer' }] },
+        true
+      ])
+      const schema5 = utils.convertSimpleSchemaToJsSchema([
+        tuple(['string']),
+        { maxLength: 10 }
+      ])
+      expect(schema5).toEqual([
+        { type: 'array', items: [{ type: 'string' }], maxLength: 10 },
+        true
+      ])
       expect(() => {
         const schema6 = utils.convertSimpleSchemaToJsSchema(tuple([]))
         expect(schema6).toEqual([{ type: 'array' }, true])
       }).toThrowError()
 
-      const schema7 = utils.convertSimpleSchemaToJsSchema([tuple(['string', 'number', 'boolean']), { minLength: 2 }])
+      const schema7 = utils.convertSimpleSchemaToJsSchema([
+        tuple(['string', 'number', 'boolean']),
+        { minLength: 2 }
+      ])
       expect(schema7).toEqual([
-        { type: 'array', items: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }], minLength: 2 },
+        {
+          type: 'array',
+          items: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }],
+          minLength: 2
+        },
         true
       ])
     })
@@ -112,8 +143,14 @@ describe('utils', () => {
         },
         true
       ])
-      const schema10 = utils.convertSimpleSchemaToJsSchema([{}, { additionalProps: true }])
-      expect(schema10).toEqual([{ type: 'object', additionalProps: true }, true])
+      const schema10 = utils.convertSimpleSchemaToJsSchema([
+        {},
+        { additionalProps: true }
+      ])
+      expect(schema10).toEqual([
+        { type: 'object', additionalProps: true },
+        true
+      ])
       expect(() => {
         utils.convertSimpleSchemaToJsSchema({ 'name+': 'string' })
       }).toThrowError()
@@ -150,7 +187,12 @@ describe('utils', () => {
       }
       const schema8 = utils.convertSimpleSchemaToJsSchema(Foo)
       expect(schema8).toEqual([
-        { type: 'object', classConstructor: Foo, properties: { bar: { type: 'string' } }, required: ['bar'] },
+        {
+          type: 'object',
+          classConstructor: Foo,
+          properties: { bar: { type: 'string' } },
+          required: ['bar']
+        },
         true
       ])
     })
@@ -178,58 +220,36 @@ describe('utils', () => {
         properties: {
           name: { type: 'string' },
           foo: { type: 'number' },
-          fullName: { type: 'string', virtual: true }
+          fullName: { type: 'string' }
         }
       }
-      expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
-      expect(utils.getInclusiveProps(schema)).toEqual(['name', 'foo', 'fullName'])
-      expect(utils.getInclusiveProps(schema, { onlyProps: ['fullName'] })).toEqual(['fullName'])
-      expect(utils.getInclusiveProps(schema, {})).toEqual(['name', 'foo', 'fullName'])
+      expect(
+        utils.getInclusiveProps(schema, { include: ['name', 'foo'] })
+      ).toEqual(['name', 'foo'])
     })
-    it("should return empty array if there's no props", () => {
-      const props = utils.getInclusiveProps(
-        {
-          type: 'object'
-        },
-        { include: ['virtual'] }
-      )
-      expect(props).toEqual([])
-    })
-    it('should return props with high priority', () => {
+    it('should not return excluded props ', () => {
       const schema = {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          foo: { type: 'number', virtual: true, readonly: true },
-          fullName: { type: 'string', virtual: true, readonly: true }
+          foo: { type: 'number' },
+          fullName: { type: 'string' }
         }
       }
-      expect(utils.getInclusiveProps(schema, { include: ['virtual'], exclude: ['readonly'] })).toEqual(['name'])
-      expect(utils.getInclusiveProps(schema, { include: ['virtual'] })).toEqual(['name', 'foo', 'fullName'])
       expect(
-        utils.getInclusiveProps(schema, { exclude: ['readonly'], include: ['virtual'], highPriority: 'include' })
-      ).toEqual(['name', 'foo', 'fullName'])
-      expect(utils.getInclusiveProps(schema, { include: ['readonly'], exclude: ['virtual'] })).toEqual(['name'])
+        utils.getInclusiveProps(schema, { exclude: ['name', 'foo'] })
+      ).toEqual(['fullName'])
+    })
+    it("should return empty array if there's no props", () => {
+      const props = utils.getInclusiveProps({
+        type: 'object'
+      })
+      expect(props).toEqual([])
     })
     it('should throw error if schema type is not object', () => {
       expect(() => {
         utils.getInclusiveProps({ type: 'array' })
       }).toThrowError()
-    })
-    it('should ignore invalid props in options', () => {
-      expect(
-        utils.getInclusiveProps(
-          {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              foo: { type: 'number', virtual: true, foo: true },
-              fullName: { type: 'string', virtual: true, readonly: true }
-            }
-          },
-          { exclude: ['bar', 'foo'] }
-        )
-      ).toEqual(['name', 'fullName'])
     })
   })
   describe('setErrorMessagePrefix', () => {
@@ -248,11 +268,25 @@ describe('utils', () => {
   describe('normalizeNullValue', () => {
     it('should convert null to undefined', () => {
       expect(normalizeNullValue(null)).toBeUndefined()
-      expect(normalizeNullValue([null, 1, 'string'])).toEqual([undefined, 1, 'string'])
-      expect(normalizeNullValue({ name: null, foo: 'bar' })).toEqual({ name: undefined, foo: 'bar' })
+      expect(normalizeNullValue([null, 1, 'string'])).toEqual([
+        undefined,
+        1,
+        'string'
+      ])
+      expect(normalizeNullValue({ name: null, foo: 'bar' })).toEqual({
+        name: undefined,
+        foo: 'bar'
+      })
       expect(normalizeNullValue('foo')).toBe('foo')
-      expect(normalizeNullValue([true, 1, 'string'])).toEqual([true, 1, 'string'])
-      expect(normalizeNullValue({ name: false, foo: 'bar' })).toEqual({ name: false, foo: 'bar' })
+      expect(normalizeNullValue([true, 1, 'string'])).toEqual([
+        true,
+        1,
+        'string'
+      ])
+      expect(normalizeNullValue({ name: false, foo: 'bar' })).toEqual({
+        name: false,
+        foo: 'bar'
+      })
     })
   })
 })

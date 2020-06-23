@@ -6,100 +6,11 @@ import { IJsonSchema } from '../types'
 import { DataTypes } from './DataTypes'
 import { IJsSchema } from './JsSchema'
 import { copyProperties, getInclusiveProps, normalizeNullValue } from './utils'
-import ValidationError from './ValidationError'
+import ValidationError, { IValidationError } from './ValidationError'
 import ValidationResult, { IValidationResult } from './ValidationResult'
+import { resolveSoa } from 'dns'
 
 const ajv = new Ajv({ useDefaults: true })
-
-export interface IJsTypeOptions {
-  include?: string[]
-  exclude?: string[]
-  includeProps?: string[]
-  excludeProps?: string[]
-  onlyProps?: string[]
-  highPriority?: 'include' | 'exclude'
-}
-
-export interface IJsTypeHelper {
-  validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult
-  serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions): any
-  deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions): any
-}
-export interface IJsType {
-  type: string
-  serialize: (value: any, schema: IJsSchema, options?: IJsTypeOptions) => any
-  deserialize: (value: any, schema: IJsSchema, options?: IJsTypeOptions) => any
-  validate(value: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult
-  toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions): IJsonSchema
-}
-
-export abstract class JsType implements IJsType {
-  public abstract type: string
-  public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): IValidationResult {
-    if (_.isNil(value)) {
-      return ValidationResult.OK
-    } else {
-      const jsonSchema = this.toJsonSchema(schema)
-      value = normalizeNullValue(value)
-      const valid = ajv.validate(jsonSchema, value) as boolean
-      if (valid) {
-        return ValidationResult.OK
-      } else {
-        return new ValidationResult(false, new ValidationError(ajv.errorsText()))
-      }
-    }
-  }
-  public serialize(value: any | undefined, schema: IJsSchema, _1?: IJsTypeOptions): any {
-    const res = this.validate(value, schema)
-    if (!res.valid) {
-      throw res.error!
-    }
-    if (_.isNil(value)) {
-      return this.getDefaultValue(schema)
-    } else {
-      return value
-    }
-  }
-  public deserialize(value: any, schema: IJsSchema, _1?: IJsTypeOptions): any {
-    if (_.isNil(value)) {
-      return this.getDefaultValue(schema)
-    } else {
-      const jsonSchema = this.toJsonSchema(schema)
-      value = normalizeNullValue(value)
-      const valid = ajv.validate(jsonSchema, value) as boolean
-      if (!valid) {
-        throw new Error(ajv.errorsText())
-      }
-      return value
-    }
-  }
-
-  public toJsonSchema(schema: IJsSchema, _1?: IJsTypeOptions): IJsonSchema {
-    const jsonSchema: IJsonSchema = { type: schema.type }
-    copyProperties(jsonSchema, schema, allJsonSchemaProps)
-    return jsonSchema
-  }
-  protected getDefaultValue(schema: IJsSchema) {
-    if (!_.isNil(schema.default)) {
-      const value = schema.default
-      const res = this.validate(value, schema)
-      if (res.valid) {
-        return value
-      } else {
-        throw res.error!
-      }
-    }
-  }
-}
-
-// tslint:disable-next-line: max-classes-per-file
-export abstract class JsCompositeType extends JsType {
-  protected dataTypes: DataTypes
-  constructor(dataTypes: DataTypes) {
-    super()
-    this.dataTypes = dataTypes
-  }
-}
 
 const allJsonSchemaProps = [
   'title',
@@ -124,52 +35,174 @@ const allJsonSchemaProps = [
   'required',
   'additionalProperties'
 ]
-// const commonSchemaProps = ['title', 'description', 'default', 'examples', 'enum', 'const']
 
-// tslint:disable-next-line: max-classes-per-file
-export class AnyType extends JsType {
-  public type: string = 'any'
-  public validate(_1: any): IValidationResult {
-    return ValidationResult.OK
+export interface IJsTypeOptions {
+  include?: string[]
+  exclude?: string[]
+}
+
+export interface IJsTypeHelper {
+  validate(
+    data: any,
+    schema: IJsSchema,
+    options?: IJsTypeOptions
+  ): [boolean, string?]
+  serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions): any
+  deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions): any
+}
+export interface IJsType {
+  type: string
+  serialize: (value: any, schema: IJsSchema) => any
+  deserialize: (value: any, schema: IJsSchema) => any
+  validate(value: any, schema: IJsSchema): IValidationResult
+  deserializationValidate(value: any, schema: IJsSchema): IValidationResult
+  toJsonSchema(schema: IJsSchema): IJsonSchema
+}
+
+export abstract class JsType implements IJsType {
+  public abstract type: string
+  // public validate(value: any, schema: IJsSchema, _1?: IJsTypeOptions): IValidationResult {
+  //   if (_.isNil(value)) {
+  //     return ValidationResult.OK
+  //   } else {
+  //     const jsonSchema = this.toJsonSchema(schema)
+  //     value = normalizeNullValue(value)
+  //     const valid = ajv.validate(jsonSchema, value) as boolean
+  //     if (valid) {
+  //       return ValidationResult.OK
+  //     } else {
+  //       return new ValidationResult(false, new ValidationError(ajv.errorsText()))
+  //     }
+  //   }
+  // }
+  public abstract validate(value: any, schema: IJsSchema): IValidationResult
+  public serialize(value: any | undefined, schema: IJsSchema): any {
+    value = this.getExpectedValue(value, schema)
+    if (_.isNil(value)) {
+      return
+    }
+    const res = this.validate(value, schema)
+    if (!res.valid) {
+      throw res.error!
+    }
+    return value
   }
-  public serialize(val: any, schema: IJsSchema) {
-    if (_.isNil(val)) {
-      return schema.default
+  public deserializationValidate(
+    value: any | undefined,
+    schema: IJsSchema
+  ): IValidationResult {
+    if (_.isNil(value)) {
+      return ValidationResult.OK
+    }
+    const jsonSchema = this.toJsonSchema(schema)
+    const valid = ajv.validate(jsonSchema, value) as boolean
+    if (valid) {
+      return ValidationResult.OK
     } else {
-      return val
+      return new ValidationResult(false, new ValidationError(ajv.errorsText()))
     }
   }
-  public deserialize(val: any, schema: IJsSchema) {
-    if (_.isNil(val)) {
+  public deserialize(value: any, schema: IJsSchema): any {
+    if (_.isNil(value)) {
+      // default value is validated when set
+      return this.getDefaultValue(schema)
+    } else {
+      // const jsonSchema = this.toJsonSchema(schema)
+      // value = normalizeNullValue(value)
+      // const valid = ajv.validate(jsonSchema, value) as boolean
+      const result = this.deserializationValidate(value, schema)
+      if (!result.valid) {
+        throw result.error!
+      }
+      return value
+    }
+  }
+
+  public abstract toJsonSchema(schema: IJsSchema): IJsonSchema
+  protected getExpectedValue(value: any, schema: IJsSchema) {
+    if (_.isNil(value)) {
       return schema.default
     } else {
-      return val
+      return value
+    }
+  }
+  protected getDefaultValue(schema: IJsSchema): any {
+    if (!_.isNil(schema.default)) {
+      const value = schema.default
+      const res = this.validate(value, schema)
+      if (res.valid) {
+        return value
+      } else {
+        throw res.error!
+      }
+    }
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export abstract class PrimitiveType extends JsType {
+  public validate(value: any, schema: IJsSchema): IValidationResult {
+    if (_.isNil(value)) {
+      return ValidationResult.OK
+    } else {
+      const valid = ajv.validate(schema, value) as boolean
+      if (valid) {
+        return ValidationResult.OK
+      } else {
+        return new ValidationResult(
+          false,
+          new ValidationError(ajv.errorsText())
+        )
+      }
     }
   }
   public toJsonSchema(schema: IJsSchema): IJsonSchema {
-    const jsonSchema: IJsonSchema = {}
+    const jsonSchema: IJsonSchema = { type: schema.type }
     copyProperties(jsonSchema, schema, allJsonSchemaProps)
     return jsonSchema
   }
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class StringType extends JsType {
+export abstract class JsCompositeType extends JsType {
+  protected dataTypes: DataTypes
+  constructor(dataTypes: DataTypes) {
+    super()
+    this.dataTypes = dataTypes
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class AnyType extends JsType {
+  public type: string = 'any'
+  public validate() {
+    return ValidationResult.OK
+  }
+  public deserializationValidate() {
+    return ValidationResult.OK
+  }
+  public toJsonSchema(): IJsonSchema {
+    return {}
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class StringType extends PrimitiveType {
   public type: string = 'string'
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class BooleanType extends JsType {
+export class BooleanType extends PrimitiveType {
   public type: string = 'boolean'
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class NumberType extends JsType {
+export class NumberType extends PrimitiveType {
   public type: string = 'number'
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class IntegerType extends JsType {
+export class IntegerType extends PrimitiveType {
   public type: string = 'integer'
 }
 
@@ -183,25 +216,25 @@ export class DateType extends JsType {
     if (value instanceof Date) {
       return ValidationResult.OK
     } else {
-      return new ValidationResult(false, new ValidationError(`Invalid date value: ${value}`))
+      return new ValidationResult(
+        false,
+        new ValidationError(`Invalid date value: ${value}`)
+      )
     }
   }
   public serialize(value: any | undefined, schema: IJsSchema) {
+    value = this.getExpectedValue(value, schema)
+    if (_.isNil(value)) {
+      return
+    }
     const res = this.validate(value)
     if (!res.valid) {
       throw res.error!
     }
-    if (_.isNil(value)) {
-      value = this.getDefaultValue(schema)
-      if (_.isNil(value)) {
-        return undefined
-      }
-    }
-    const date = value as Date
     const format = schema.format
     if (format) {
       const timezone = schema.timezone || 'utc'
-      const val = DateTime.fromJSDate(date).setZone(timezone)
+      const val = DateTime.fromJSDate(value).setZone(timezone)
       switch (format) {
         case 'time': {
           return val.toFormat('HH:mm:ssZZ')
@@ -210,7 +243,7 @@ export class DateType extends JsType {
           return val.toISODate()
         }
         default:
-          return date.toISOString()
+          return value.toISOString()
       }
     } else {
       return value.toISOString()
@@ -220,10 +253,9 @@ export class DateType extends JsType {
     if (_.isNil(value)) {
       return this.getDefaultValue(schema)
     } else {
-      const jsonSchema = this.toJsonSchema(schema)
-      const valid = ajv.validate(jsonSchema, value) as boolean
-      if (!valid) {
-        throw new Error(ajv.errorsText())
+      const res = this.deserializationValidate(value, schema)
+      if (!res.valid) {
+        throw res.error
       }
       const dateString = value as string
       const format = schema.format
@@ -231,7 +263,9 @@ export class DateType extends JsType {
         const timezone = schema.timezone || 'utc'
         switch (format) {
           case 'time': {
-            const val = DateTime.fromFormat(dateString, 'HH:mm:ssZZ')
+            const val = DateTime.fromFormat(dateString, 'HH:mm:ssZZ', {
+              zone: timezone
+            })
             return val.toJSDate()
           }
           case 'date': {
@@ -259,7 +293,7 @@ export class DateType extends JsType {
 // tslint:disable-next-line: max-classes-per-file
 export class ArrayType extends JsCompositeType {
   public type: string = 'array'
-  public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
+  public toJsonSchema(schema: IJsSchema) {
     const jsonSchema: IJsonSchema = { type: 'array' }
     const items = schema.items
     let jsonItems: IJsonSchema | IJsonSchema[] | undefined
@@ -267,11 +301,11 @@ export class ArrayType extends JsCompositeType {
       if (Array.isArray(items)) {
         jsonItems = items.map((item) => {
           const jsType = this.dataTypes.get(item.type)
-          return jsType.toJsonSchema(item, options)
+          return jsType.toJsonSchema(item)
         })
       } else {
         const jsType = this.dataTypes.get(items.type)
-        jsonItems = jsType.toJsonSchema(items, options)
+        jsonItems = jsType.toJsonSchema(items)
       }
     }
     copyProperties(jsonSchema, schema, allJsonSchemaProps)
@@ -279,11 +313,37 @@ export class ArrayType extends JsCompositeType {
       jsonSchema.items = jsonItems
     }
     if (!_.isNil(schema.default)) {
-      jsonSchema.default = this.serialize(schema.default, schema, options)
+      const defaultVal = schema.default
+      if (!Array.isArray(defaultVal)) {
+        throw new TypeError(`Invalid array value:${defaultVal}`)
+      }
+      if (!items) {
+        jsonSchema.default = schema.default
+      } else if (Array.isArray(items)) {
+        const val: any[] = []
+        for (let i = 0; i < items.length; i++) {
+          if (_.isNil(defaultVal[i])) {
+            val[i] = null
+          } else {
+            val[i] = this.dataTypes.serialize(defaultVal[i], items[i])
+          }
+        }
+        jsonSchema.default = val
+      } else {
+        const val: any[] = []
+        for (let i = 0; i < defaultVal.length; i++) {
+          if (_.isNil(defaultVal[i])) {
+            val[i] = null
+          } else {
+            val[i] = this.dataTypes.serialize(val, items)
+          }
+        }
+        jsonSchema.default = val
+      }
     }
     return jsonSchema
   }
-  public validate(val: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult {
+  public validate(val: any, schema: IJsSchema): IValidationResult {
     if (_.isNil(val)) {
       return ValidationResult.OK
     }
@@ -293,7 +353,7 @@ export class ArrayType extends JsCompositeType {
         if (Array.isArray(itemSchema)) {
           for (let i = 0; i < val.length; i++) {
             const jsType = this.dataTypes.get(itemSchema[i].type)
-            const res = jsType.validate(val[i], itemSchema[i], options)
+            const res = jsType.validate(val[i], itemSchema[i])
             if (!res.valid) {
               const err = res.error!.chainProp(`[${i}]`)
               return new ValidationResult(false, err)
@@ -302,7 +362,7 @@ export class ArrayType extends JsCompositeType {
         } else {
           for (let i = 0; i < val.length; i++) {
             const jsType = this.dataTypes.get(itemSchema.type)
-            const res = jsType.validate(val[i], itemSchema, options)
+            const res = jsType.validate(val[i], itemSchema)
             if (!res.valid) {
               const err = res.error!.chainProp(`[${i}]`)
               return new ValidationResult(false, err)
@@ -312,16 +372,20 @@ export class ArrayType extends JsCompositeType {
       }
       return ValidationResult.OK
     } else {
-      return new ValidationResult(false, new ValidationError(`Invalid array:${val}`))
+      return new ValidationResult(
+        false,
+        new ValidationError(`Invalid array:${val}`)
+      )
     }
   }
-  public serialize(value: any, schema: IJsSchema, options?: IJsTypeOptions) {
-    const res = this.validate(value, schema, options)
+  public serialize(value: any, schema: IJsSchema) {
+    value = this.getExpectedValue(value, schema)
+    if (_.isNil(value)) {
+      return
+    }
+    const res = this.validate(value, schema)
     if (!res.valid) {
       throw res.error!
-    }
-    if (_.isNil(value)) {
-      value = this.getDefaultValue(schema)
     }
     if (Array.isArray(value)) {
       if (schema.items) {
@@ -329,14 +393,14 @@ export class ArrayType extends JsCompositeType {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
             const jsType = this.dataTypes.get(schema.items[i].type)
-            val.push(jsType.serialize(value[i], schema.items[i], options))
+            val.push(jsType.serialize(value[i], schema.items[i]))
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
             const jsType = this.dataTypes.get(itemSchema.type)
-            return value.map((item) => jsType.serialize(item, itemSchema, options))
+            return value.map((item) => jsType.serialize(item, itemSchema))
           }
         }
       } else {
@@ -344,18 +408,13 @@ export class ArrayType extends JsCompositeType {
       }
     }
   }
-  public deserialize(value: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
+  public deserialize(value: any | undefined, schema: IJsSchema) {
     if (_.isNil(value)) {
-      value = this.getDefaultValue(schema)
-      if (_.isNil(value)) {
-        return
-      }
+      return this.getDefaultValue(schema)
     }
-    value = normalizeNullValue(value)
-    const jsonSchema = this.toJsonSchema(schema)
-    const valid = ajv.validate(jsonSchema, value) as boolean
-    if (!valid) {
-      throw new Error(ajv.errorsText())
+    const res = this.deserializationValidate(value, schema)
+    if (!res.valid) {
+      throw res.error
     }
     if (Array.isArray(value)) {
       if (schema.items) {
@@ -363,14 +422,14 @@ export class ArrayType extends JsCompositeType {
           const val: any[] = []
           for (let i = 0; i < value.length; i++) {
             const jsType = this.dataTypes.get(schema.items[i].type)
-            val.push(jsType.deserialize(value[i], schema.items[i], options))
+            val.push(jsType.deserialize(value[i], schema.items[i]))
           }
           return val
         } else {
           const itemSchema = schema.items
           if (itemSchema) {
             const jsType = this.dataTypes.get(itemSchema.type)
-            return value.map((item) => jsType.deserialize(item, itemSchema, options))
+            return value.map((item) => jsType.deserialize(item, itemSchema))
           }
         }
       } else {
@@ -382,35 +441,62 @@ export class ArrayType extends JsCompositeType {
 // tslint:disable-next-line: max-classes-per-file
 export class ObjectType extends JsCompositeType {
   public type: string = 'object'
-  public toJsonSchema(schema: IJsSchema, options?: IJsTypeOptions) {
+  public toJsonSchema(schema: IJsSchema) {
     const jsonSchema: IJsonSchema = { type: 'object' }
-    options = options || {}
     const properties = schema.properties
-    const props = getInclusiveProps(schema, options)
-    if (properties && !_.isEmpty(properties)) {
+    if (!properties) {
+      return jsonSchema
+    }
+    const props = Object.getOwnPropertyNames(properties)
+    if (properties && !_.isEmpty(props)) {
       jsonSchema.properties = {}
       for (const prop of props) {
         const propSchema = properties[prop]
         const jsType = this.dataTypes.get(propSchema.type)
-        Reflect.set(jsonSchema.properties, prop, jsType.toJsonSchema(propSchema))
+        Reflect.set(
+          jsonSchema.properties,
+          prop,
+          jsType.toJsonSchema(propSchema)
+        )
       }
     }
-    if (schema.required && !_.isEmpty(schema.required)) {
-      const required = _.intersection(schema.required, props)
-      jsonSchema.required = required
+    if (schema.required) {
+      jsonSchema.required = schema.required
     }
     copyProperties(jsonSchema, schema, ALL_COMMON_SCHEMA_PROPS)
-    if (!_.isNil(schema.default)) {
-      schema.default = this.serialize(schema.default, schema, options)
+    if (schema.default && !_.isNil(schema.default)) {
+      const defaultVal = schema.default
+      const res = this.validate(defaultVal, schema)
+      if (!res.valid) {
+        throw res.error
+      }
+      const val: any = {}
+      const valProps = Object.getOwnPropertyNames(defaultVal)
+      for (const prop of valProps) {
+        if (_.isNil(defaultVal[prop])) {
+          val[prop] = null
+        } else {
+          if (prop in properties) {
+            val[prop] = this.dataTypes.serialize(
+              defaultVal[prop],
+              properties[prop]
+            )
+          }
+        }
+      }
+      jsonSchema.default = val
     }
     return jsonSchema
   }
-  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): IValidationResult {
+  public validate(data: any, schema: IJsSchema): IValidationResult {
     if (_.isNil(data)) {
       return ValidationResult.OK
     }
     if (typeof data !== 'object') {
-      return new ValidationResult(false, new ValidationError(`Invalid object value: ${data}`))
+      return new ValidationResult(
+        false,
+        new ValidationError(`Invalid object value: ${data}`)
+      )
     }
     const properties = schema.properties || {}
     const requiredProps = schema.required || []
@@ -420,38 +506,37 @@ export class ObjectType extends JsCompositeType {
       const propSchema = properties[prop]
       const value = Reflect.get(data, prop)
       if (requiredProps.includes(prop) && _.isNil(value)) {
-        return new ValidationResult(false, new ValidationError(prop, `${prop} is required`))
+        return new ValidationResult(
+          false,
+          new ValidationError(prop, `${prop} is required`)
+        )
       }
       const jsType = this.dataTypes.get(propSchema.type)
-      const res = jsType.validate(value, propSchema, options)
+      const res = jsType.validate(value, propSchema)
       if (!res.valid) {
         return new ValidationResult(false, res.error!.chainProp(prop))
       }
     }
     return ValidationResult.OK
   }
-  public serialize(data: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
+  public serialize(data: any | undefined, schema: IJsSchema) {
+    data = this.getExpectedValue(data, schema)
     if (_.isNil(data)) {
-      data = this.getDefaultValue(schema)
-      if (_.isNil(data)) {
-        return
-      }
+      return this.getDefaultValue(schema)
     }
-    const res = this.validate(data, schema, options)
+    const res = this.validate(data, schema)
     if (!res.valid) {
       throw res.error
     }
-
     const properties = schema.properties
     const json: any = {}
-    options = options || {}
     if (properties) {
-      const props = getInclusiveProps(schema, options)
+      const props = Object.getOwnPropertyNames(properties)
       for (const prop of props) {
         const propSchema = properties[prop]
         const jsType = this.dataTypes.get(propSchema.type)
-        const value = jsType.serialize(Reflect.get(data, prop), propSchema, options)
-        if (_.isNil(value)) {
+        const value = jsType.serialize(Reflect.get(data, prop), propSchema)
+        if (value === undefined) {
           continue
         }
         Reflect.set(json, prop, value)
@@ -461,7 +546,7 @@ export class ObjectType extends JsCompositeType {
         for (const dataProp of dataProps) {
           if (!props.includes(dataProp)) {
             const value = Reflect.get(data, dataProp)
-            if (_.isNil(value)) {
+            if (value === undefined) {
               continue
             }
             Reflect.set(json, dataProp, value)
@@ -473,25 +558,17 @@ export class ObjectType extends JsCompositeType {
     }
     return json
   }
-  public deserialize(data: any | undefined, schema: IJsSchema, options?: IJsTypeOptions) {
+  public deserialize(data: any | undefined, schema: IJsSchema) {
     if (_.isNil(data)) {
       data = this.getDefaultValue(schema)
-      if (_.isNil(data)) {
-        return
-      }
     }
-    const jsonSchema = this.toJsonSchema(schema, options)
-    data = normalizeNullValue(data)
-    const valid = ajv.validate(jsonSchema, data) as boolean
-    if (!valid) {
-      throw new Error(ajv.errorsText())
+    const res = this.deserializationValidate(data, schema)
+    if (!res.valid) {
+      throw res.error
     }
     const properties = schema.properties
     if (properties && !_.isEmpty(properties)) {
-      const obj = {}
-      if (schema.classConstructor) {
-        Reflect.setPrototypeOf(obj, schema.classConstructor.prototype)
-      }
+      const obj = schema.classConstructor ? new schema.classConstructor() : {}
       const propNames = Object.getOwnPropertyNames(properties)
       for (const prop of propNames) {
         const propSchema = properties[prop]
@@ -500,8 +577,8 @@ export class ObjectType extends JsCompositeType {
           continue
         }
         const jsType = this.dataTypes.get(propSchema.type)
-        const value = jsType.deserialize(Reflect.get(data, prop), propSchema, options)
-        if (_.isNil(value)) {
+        const value = jsType.deserialize(Reflect.get(data, prop), propSchema)
+        if (value === undefined) {
           continue
         }
         Reflect.set(obj, prop, value)
@@ -511,7 +588,7 @@ export class ObjectType extends JsCompositeType {
         for (const dataProp of dataProps) {
           if (!propNames.includes(dataProp)) {
             const value = Reflect.get(data, dataProp)
-            if (_.isNil(value)) {
+            if (value === undefined) {
               continue
             }
             Reflect.set(obj, dataProp, value)

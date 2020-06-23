@@ -39,4 +39,4 @@ export type SimpleType =
   | Tuple
   | { [prop: string]: SimpleType }
   // tslint:disable-next-line: ban-types
-  | Array<string | Function | { [prop: string]: SimpleType }>
+  | (string | Function | { [prop: string]: SimpleType })[]

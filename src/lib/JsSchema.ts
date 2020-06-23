@@ -5,7 +5,6 @@ export interface IJsSchema {
   pattern?: string
   properties?: { [prop: string]: IJsSchema }
   items?: IJsSchema | IJsSchema[]
-  virtual?: boolean
   readonly?: boolean
   required?: string[]
   classConstructor?: Constructor<any>

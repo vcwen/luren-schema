@@ -10,7 +10,10 @@ describe('Prop', () => {
       public name!: string
     }
     const ctrl = new TestController()
-    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, ctrl)
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(
+      MetadataKey.PROPS,
+      ctrl
+    )
     expect(props.get('name')).toEqual(
       expect.objectContaining({
         name: 'name',
@@ -31,7 +34,10 @@ describe('Prop', () => {
         this.name = name.toLocaleLowerCase()
       }
     }
-    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(
+      MetadataKey.PROPS,
+      TestController.prototype
+    )
     expect(props.get('name')).toEqual(
       expect.objectContaining({
         required: true,
@@ -55,7 +61,10 @@ describe('Prop', () => {
       @Prop({ required: true, schema: { type: 'string', format: 'date' } })
       public name!: string
     }
-    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(
+      MetadataKey.PROPS,
+      TestController.prototype
+    )
     expect(props.get('name')).toEqual(
       expect.objectContaining({
         required: true,
@@ -79,16 +88,19 @@ describe('Prop', () => {
         this._foo = foo
       }
     }
-    const props: Map<string, PropMetadata> = Reflect.getMetadata(MetadataKey.PROPS, TestController.prototype)
+    const props: Map<string, PropMetadata> = Reflect.getMetadata(
+      MetadataKey.PROPS,
+      TestController.prototype
+    )
     expect(props.get('name')).toEqual({
       name: 'name',
       required: true,
-      schema: { type: 'string', format: 'date', virtual: true, readonly: true }
+      schema: { type: 'string', format: 'date', readonly: true }
     })
     expect(props.get('foo')).toEqual({
       name: 'foo',
       required: true,
-      schema: { type: 'number', virtual: true }
+      schema: { type: 'number' }
     })
   })
   it('should throw error is prop only has setter', () => {

@@ -23,19 +23,19 @@ export class DataTypes<T extends IJsType = IJsType> {
       return jsType
     }
   }
-  public validate(data: any, schema: IJsSchema, options?: IJsTypeOptions): ValidationResult {
+  public validate(data: any, schema: IJsSchema): ValidationResult {
     const jsType = this.get(schema.type)
-    return jsType.validate(data, schema, options)
+    return jsType.validate(data, schema)
   }
 
-  public serialize(data: any, schema: IJsSchema, options?: IJsTypeOptions) {
+  public serialize(data: any, schema: IJsSchema) {
     const jsType = this.get(schema.type)
-    return jsType.serialize(data, schema, options)
+    return jsType.serialize(data, schema)
   }
 
-  public deserialize(json: any, schema: IJsSchema, options?: IJsTypeOptions) {
+  public deserialize(json: any, schema: IJsSchema) {
     const jsType = this.get(schema.type)
-    const data = jsType.deserialize(json, schema, options)
+    const data = jsType.deserialize(json, schema)
     return data
   }
   public toJsonSchema(schema: IJsSchema) {
