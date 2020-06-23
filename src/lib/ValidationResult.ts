@@ -1,4 +1,4 @@
-import { IValidationError } from './ValidationError'
+import ValidationError, { IValidationError } from './ValidationError'
 
 export interface IValidationResult {
   valid: boolean
@@ -7,12 +7,20 @@ export interface IValidationResult {
 
 // tslint:disable-next-line: max-classes-per-file
 export class ValidationResult implements IValidationResult {
-  public static OK = new ValidationResult(true)
+  public static ok() {
+    return new ValidationResult(true)
+  }
+  public static error(error: string | IValidationError) {
+    return new ValidationResult(
+      false,
+      typeof error === 'string' ? new ValidationError(error) : error
+    )
+  }
   public valid: boolean
   public error?: IValidationError
-  constructor(valid: boolean, error?: IValidationError) {
+  constructor(valid: boolean, error?: IValidationError | string) {
     this.valid = valid
-    this.error = error
+    this.error = typeof error === 'string' ? new ValidationError(error) : error
   }
 }
 
