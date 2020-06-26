@@ -351,6 +351,39 @@ export class ArrayType extends JsCompositeType {
       return ValidationResult.error(`Invalid array:${val}`)
     }
   }
+  public deserializationValidate(
+    val: any,
+    schema: IJsSchema
+  ): IValidationResult {
+    if (_.isNil(val)) {
+      return ValidationResult.ok()
+    }
+    if (Array.isArray(val)) {
+      const itemSchema = schema.items
+      if (itemSchema) {
+        if (Array.isArray(itemSchema)) {
+          for (let i = 0; i < val.length; i++) {
+            const jsType = this.dataTypes.get(itemSchema[i].type)
+            const res = jsType.deserializationValidate(val[i], itemSchema[i])
+            if (!res.valid) {
+              return ValidationResult.error(res.error!.chainProp(`[${i}]`))
+            }
+          }
+        } else {
+          for (let i = 0; i < val.length; i++) {
+            const jsType = this.dataTypes.get(itemSchema.type)
+            const res = jsType.deserializationValidate(val[i], itemSchema)
+            if (!res.valid) {
+              return ValidationResult.error(res.error!.chainProp(`[${i}]`))
+            }
+          }
+        }
+      }
+      return ValidationResult.ok()
+    } else {
+      return ValidationResult.error(`Invalid array:${val}`)
+    }
+  }
   public serialize(value: any, schema: IJsSchema) {
     value = this.getExpectedValue(value, schema)
     if (_.isNil(value)) {
@@ -480,6 +513,34 @@ export class ObjectType extends JsCompositeType {
       }
       const jsType = this.dataTypes.get(propSchema.type)
       const res = jsType.validate(value, propSchema)
+      if (!res.valid) {
+        return ValidationResult.error(res.error!.chainProp(prop))
+      }
+    }
+    return ValidationResult.ok()
+  }
+  public deserializationValidate(
+    data: any,
+    schema: IJsSchema
+  ): IValidationResult {
+    if (_.isNil(data)) {
+      return ValidationResult.ok()
+    }
+    if (typeof data !== 'object') {
+      return ValidationResult.error(`Invalid object value: ${data}`)
+    }
+    const properties = schema.properties || {}
+    const requiredProps = schema.required || []
+
+    const propNames = Object.getOwnPropertyNames(properties)
+    for (const prop of propNames) {
+      const propSchema = properties[prop]
+      const value = Reflect.get(data, prop)
+      if (requiredProps.includes(prop) && _.isNil(value)) {
+        return ValidationResult.error(`${prop} is required`)
+      }
+      const jsType = this.dataTypes.get(propSchema.type)
+      const res = jsType.deserializationValidate(value, propSchema)
       if (!res.valid) {
         return ValidationResult.error(res.error!.chainProp(prop))
       }
