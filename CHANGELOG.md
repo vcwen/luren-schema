@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/vcwen/luren-schema/compare/v0.2.2...v0.2.3) (2020-06-26)
+
+
+### Bug Fixes
+
+* **jstype:** fix deserialization for object & array ([cee44d6](https://github.com/vcwen/luren-schema/commit/cee44d60af55dc8b12ccfeaf8e0a0d95bd1793d5))
+
 ### [0.2.2](https://github.com/vcwen/luren-schema/compare/v0.2.1...v0.2.2) (2020-06-23)
 
 ### [0.2.1](https://github.com/vcwen/luren-schema/compare/v0.2.0...v0.2.1) (2020-06-23)
