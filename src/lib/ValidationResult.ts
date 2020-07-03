@@ -6,22 +6,23 @@ export interface IValidationResult {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class ValidationResult implements IValidationResult {
+export class ValidationResult implements ValidationResult {
   public static ok() {
     return new ValidationResult(true)
   }
-  public static error(error: string | IValidationError) {
+  public static invalid(error?: string | ValidationError) {
     return new ValidationResult(
       false,
       typeof error === 'string' ? new ValidationError(error) : error
     )
   }
+  public static error(error: string | ValidationError) {
+    return this.invalid(error)
+  }
   public valid: boolean
-  public error?: IValidationError
-  constructor(valid: boolean, error?: IValidationError | string) {
+  public error?: ValidationError
+  constructor(valid: boolean, error?: ValidationError | string) {
     this.valid = valid
     this.error = typeof error === 'string' ? new ValidationError(error) : error
   }
 }
-
-export default ValidationResult

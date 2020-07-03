@@ -6,7 +6,7 @@ import { IJsonSchema } from '../types'
 import { DataTypes } from './DataTypes'
 import { IJsSchema } from './JsSchema'
 import { copyProperties } from './utils'
-import ValidationResult, { IValidationResult } from './ValidationResult'
+import { ValidationResult } from './ValidationResult'
 
 const ajv = new Ajv({ useDefaults: true })
 
@@ -52,14 +52,14 @@ export interface IJsType {
   type: string
   serialize: (value: any, schema: IJsSchema) => any
   deserialize: (value: any, schema: IJsSchema) => any
-  validate(value: any, schema: IJsSchema): IValidationResult
-  deserializationValidate(value: any, schema: IJsSchema): IValidationResult
+  validate(value: any, schema: IJsSchema): ValidationResult
+  deserializationValidate(value: any, schema: IJsSchema): ValidationResult
   toJsonSchema(schema: IJsSchema): IJsonSchema
 }
 
 export abstract class JsType implements IJsType {
   public abstract type: string
-  public abstract validate(value: any, schema: IJsSchema): IValidationResult
+  public abstract validate(value: any, schema: IJsSchema): ValidationResult
   public serialize(value: any | undefined, schema: IJsSchema): any {
     value = this.getExpectedValue(value, schema)
     if (_.isNil(value)) {
@@ -74,7 +74,7 @@ export abstract class JsType implements IJsType {
   public deserializationValidate(
     value: any | undefined,
     schema: IJsSchema
-  ): IValidationResult {
+  ): ValidationResult {
     if (_.isNil(value)) {
       return ValidationResult.ok()
     }
@@ -125,7 +125,7 @@ export abstract class JsType implements IJsType {
 
 // tslint:disable-next-line: max-classes-per-file
 export abstract class PrimitiveType extends JsType {
-  public validate(value: any, schema: IJsSchema): IValidationResult {
+  public validate(value: any, schema: IJsSchema): ValidationResult {
     if (_.isNil(value)) {
       return ValidationResult.ok()
     } else {
@@ -190,7 +190,7 @@ export class IntegerType extends PrimitiveType {
 // tslint:disable-next-line: max-classes-per-file
 export class DateType extends JsType {
   public type: string = 'date'
-  public validate(value: any): IValidationResult {
+  public validate(value: any): ValidationResult {
     if (_.isNil(value)) {
       return ValidationResult.ok()
     }
@@ -290,38 +290,12 @@ export class ArrayType extends JsCompositeType {
     if (jsonItems) {
       jsonSchema.items = jsonItems
     }
-    if (!_.isNil(schema.default)) {
-      const defaultVal = schema.default
-      if (!Array.isArray(defaultVal)) {
-        throw new TypeError(`Invalid array value:${defaultVal}`)
-      }
-      if (!items) {
-        jsonSchema.default = schema.default
-      } else if (Array.isArray(items)) {
-        const val: any[] = []
-        for (let i = 0; i < items.length; i++) {
-          if (_.isNil(defaultVal[i])) {
-            val[i] = null
-          } else {
-            val[i] = this.dataTypes.serialize(defaultVal[i], items[i])
-          }
-        }
-        jsonSchema.default = val
-      } else {
-        const val: any[] = []
-        for (let i = 0; i < defaultVal.length; i++) {
-          if (_.isNil(defaultVal[i])) {
-            val[i] = null
-          } else {
-            val[i] = this.dataTypes.serialize(val, items)
-          }
-        }
-        jsonSchema.default = val
-      }
+    if (schema.default) {
+      jsonSchema.default = this.serialize(schema.default, schema)
     }
     return jsonSchema
   }
-  public validate(val: any, schema: IJsSchema): IValidationResult {
+  public validate(val: any, schema: IJsSchema): ValidationResult {
     if (_.isNil(val)) {
       return ValidationResult.ok()
     }
@@ -470,31 +444,12 @@ export class ObjectType extends JsCompositeType {
       jsonSchema.required = schema.required
     }
     copyProperties(jsonSchema, schema, ALL_COMMON_SCHEMA_PROPS)
-    if (schema.default && !_.isNil(schema.default)) {
-      const defaultVal = schema.default
-      const res = this.validate(defaultVal, schema)
-      if (!res.valid) {
-        throw res.error
-      }
-      const val: any = {}
-      const valProps = Object.getOwnPropertyNames(defaultVal)
-      for (const prop of valProps) {
-        if (_.isNil(defaultVal[prop])) {
-          val[prop] = null
-        } else {
-          if (prop in properties) {
-            val[prop] = this.dataTypes.serialize(
-              defaultVal[prop],
-              properties[prop]
-            )
-          }
-        }
-      }
-      jsonSchema.default = val
+    if (schema.default) {
+      jsonSchema.default = this.serialize(schema.default, schema)
     }
     return jsonSchema
   }
-  public validate(data: any, schema: IJsSchema): IValidationResult {
+  public validate(data: any, schema: IJsSchema): ValidationResult {
     if (_.isNil(data)) {
       return ValidationResult.ok()
     }

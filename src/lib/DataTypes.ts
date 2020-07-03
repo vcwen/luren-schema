@@ -2,7 +2,7 @@ import { Map } from 'immutable'
 import _ from 'lodash'
 import { IJsSchema } from './JsSchema'
 import { IJsType } from './JsType'
-import ValidationResult from './ValidationResult'
+import { ValidationResult } from './ValidationResult'
 
 export class DataTypes<T extends IJsType = IJsType> {
   private _types = Map<string, T>()
