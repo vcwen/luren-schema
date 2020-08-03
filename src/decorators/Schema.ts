@@ -1,7 +1,7 @@
 import { Map } from 'immutable'
 import _ from 'lodash'
 import 'reflect-metadata'
-import { ALL_JS_SCHEMA_PROPS } from '../constants'
+import { JS_SCHEMA_PROPS } from '../constants'
 import { MetadataKey } from '../constants/MetadataKey'
 import { IJsSchema } from '../lib/JsSchema'
 import { copyProperties } from '../lib/utils'
@@ -46,8 +46,12 @@ export function Schema(options: ISchemaOptions = {}) {
       jsSchema.required = requiredProps
     }
 
-    const metadata = new SchemaMetadata(constructor.name, jsSchema, options.desc)
-    copyProperties(metadata.schema, options, ALL_JS_SCHEMA_PROPS)
+    const metadata = new SchemaMetadata(
+      constructor.name,
+      jsSchema,
+      options.desc
+    )
+    copyProperties(metadata.schema, options, JS_SCHEMA_PROPS)
     Reflect.defineMetadata(MetadataKey.SCHEMA, metadata, constructor.prototype)
   }
 }

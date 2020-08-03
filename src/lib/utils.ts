@@ -3,7 +3,6 @@ import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
 import { Constructor } from '../types'
 import { IJsSchema } from './JsSchema'
-import { IJsTypeOptions } from './JsType'
 import { Tuple } from './Tuple'
 
 export const defineJsSchema = (target: Constructor, schema: IJsSchema) => {
@@ -182,28 +181,29 @@ export const copyProperties = (
   return target
 }
 
-export const getInclusiveProps = (
-  objectSchema: IJsSchema,
-  options: IJsTypeOptions = {}
-): string[] => {
-  if (objectSchema.type !== 'object') {
-    throw new Error('getInclusiveProps only works with object schema')
+export const clone = <T>(
+  source: T,
+  filter: (key: string, val: any) => boolean = () => true
+): T => {
+  if (_.isNil(source)) {
+    return source
   }
-  if (!objectSchema.properties || _.isEmpty(objectSchema.properties)) {
-    return []
+  if (typeof source !== 'object') {
+    return source
   }
-  const properties = objectSchema.properties
-  let props = Object.getOwnPropertyNames(properties)
-
-  const include = options.include
-  if (include && !_.isEmpty(include)) {
-    props = _.intersection(props, include)
+  if (Array.isArray(source)) {
+    return source.map((item) => clone(item, filter)) as any
+  } else {
+    const copy: any = {}
+    const keys = Object.keys(source)
+    for (const key of keys) {
+      const val: any = Reflect.get(source as any, key)
+      if (filter(key, val)) {
+        copy[key] = clone(val, filter)
+      }
+    }
+    return copy as T
   }
-  const exclude = options.exclude
-  if (exclude) {
-    props = _.difference(props, exclude)
-  }
-  return props
 }
 
 export const setErrorMessagePrefix = (err: any, prefix: string) => {

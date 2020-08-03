@@ -544,7 +544,7 @@ describe('ObjectType', () => {
           {
             type: 'object',
             properties: { foo: { type: 'number' } },
-            additionalProperties: true
+            ignoreAdditionalProps: false
           }
         )
       ).toEqual({ foo: 1, bar: true })
@@ -584,7 +584,7 @@ describe('ObjectType', () => {
             type: 'object',
             properties: {
               foo: { type: 'number' },
-              bar: { type: 'boolean', readonly: true },
+              bar: { type: 'boolean' },
               other: { type: 'string' }
             }
           }
@@ -659,7 +659,7 @@ describe('ObjectType', () => {
           {
             type: 'object',
             properties: { foo: { type: 'number' } },
-            additionalProperties: true
+            ignoreAdditionalProps: false
           }
         )
       ).toEqual({ foo: 1, bar: true })
@@ -698,12 +698,12 @@ describe('ObjectType', () => {
           type: 'object',
           properties: {
             foo: { type: 'number' },
-            bar: { type: 'boolean', readonly: true },
+            bar: { type: 'boolean' },
             other: { type: 'string' }
           }
         }
       )
-      expect(val1).toEqual({ foo: 1 })
+      expect(val1).toEqual({ foo: 1, bar: true })
       class Person {
         public foo!: string
         public bar?: boolean

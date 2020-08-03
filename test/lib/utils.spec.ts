@@ -213,45 +213,6 @@ describe('utils', () => {
       expect(target).toEqual({ title: 'engineer', foo: 'foo', bar: 3 })
     })
   })
-  describe('getInclusiveProps', () => {
-    it('should return included props ', () => {
-      const schema = {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          foo: { type: 'number' },
-          fullName: { type: 'string' }
-        }
-      }
-      expect(
-        utils.getInclusiveProps(schema, { include: ['name', 'foo'] })
-      ).toEqual(['name', 'foo'])
-    })
-    it('should not return excluded props ', () => {
-      const schema = {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          foo: { type: 'number' },
-          fullName: { type: 'string' }
-        }
-      }
-      expect(
-        utils.getInclusiveProps(schema, { exclude: ['name', 'foo'] })
-      ).toEqual(['fullName'])
-    })
-    it("should return empty array if there's no props", () => {
-      const props = utils.getInclusiveProps({
-        type: 'object'
-      })
-      expect(props).toEqual([])
-    })
-    it('should throw error if schema type is not object', () => {
-      expect(() => {
-        utils.getInclusiveProps({ type: 'array' })
-      }).toThrowError()
-    })
-  })
   describe('setErrorMessagePrefix', () => {
     it('should return err which message with prefix', () => {
       const err = new Error('test error')

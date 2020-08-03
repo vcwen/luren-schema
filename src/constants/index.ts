@@ -1,43 +1,63 @@
-export const ALL_COMMON_SCHEMA_PROPS = [
+export const IDENTICAL_JSON_SCHEMA_PROPS = [
+  // General
   'title',
   'description',
-  'default',
+  // 'default',
   'examples',
   'enum',
   'const',
+
+  // string
   'format',
   'pattern',
+  'minLength',
+  'maxLength',
+  // number
   'multipleOf',
   'minimum',
   'exclusiveMinimum',
   'maximum',
   'exclusiveMaximum',
+  // array
+  // 'items',
+  'uniqueItems',
   'minItems',
   'maxItems',
-  'uniqueItems',
-  'additionalItems',
+
+  // object
+  // 'properties',
+  // 'required',
   'additionalProperties'
 ]
-export const ALL_JS_SCHEMA_PROPS = [
+export const JS_SCHEMA_PROPS = [
+  // General
   'title',
   'description',
   'default',
   'examples',
   'enum',
   'const',
+
+  // string
   'format',
   'pattern',
+  'minLength',
+  'maxLength',
+  // number
   'multipleOf',
   'minimum',
   'exclusiveMinimum',
   'maximum',
   'exclusiveMaximum',
+  // array
   'items',
+  'uniqueItems',
   'minItems',
   'maxItems',
-  'uniqueItems',
-  'additionalItems',
+
+  // object
   'properties',
   'required',
-  'additionalProperties'
+  'additionalProperties',
+  'ignoreAdditionalProps'
 ]

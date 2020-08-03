@@ -95,7 +95,7 @@ describe('Prop', () => {
     expect(props.get('name')).toEqual({
       name: 'name',
       required: true,
-      schema: { type: 'string', format: 'date', readonly: true }
+      schema: { type: 'string', format: 'date', virtual: true }
     })
     expect(props.get('foo')).toEqual({
       name: 'foo',

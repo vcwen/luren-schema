@@ -6,7 +6,7 @@ export interface IValidationResult {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class ValidationResult implements ValidationResult {
+export class ValidationResult implements IValidationResult {
   public static ok() {
     return new ValidationResult(true)
   }

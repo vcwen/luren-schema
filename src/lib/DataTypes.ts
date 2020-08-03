@@ -5,7 +5,7 @@ import { IJsType } from './JsType'
 import { ValidationResult } from './ValidationResult'
 
 export class DataTypes<T extends IJsType = IJsType> {
-  private _types = Map<string, T>()
+  public _types = Map<string, T>()
   public register(type: string, jsType: T) {
     if (this._types.has(type)) {
       throw new Error(`type:${type} already exists`)

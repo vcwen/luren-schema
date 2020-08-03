@@ -1,6 +1,6 @@
 import { Map } from 'immutable'
 import 'reflect-metadata'
-import { ALL_JS_SCHEMA_PROPS } from '../constants'
+import { JS_SCHEMA_PROPS } from '../constants'
 import { MetadataKey } from '../constants/MetadataKey'
 import { IJsSchema } from '../lib/JsSchema'
 import { convertSimpleSchemaToJsSchema, copyProperties } from '../lib/utils'
@@ -43,7 +43,7 @@ const getPropMetadata = (
   if (descriptor) {
     if (descriptor.get) {
       if (!descriptor.set) {
-        metadata.schema.readonly = true
+        metadata.schema.virtual = true
       }
     } else {
       // only setter
@@ -53,7 +53,7 @@ const getPropMetadata = (
   const schemaOptions = copyProperties(
     {},
     options,
-    ALL_JS_SCHEMA_PROPS.filter((item) => item !== 'required')
+    JS_SCHEMA_PROPS.filter((item) => item !== 'required')
   )
   Object.assign(metadata.schema, schemaOptions)
   return metadata

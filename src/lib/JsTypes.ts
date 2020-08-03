@@ -9,6 +9,7 @@ import {
   ObjectType,
   StringType
 } from './JsType'
+import deepFreeze from 'deep-freeze'
 
 export const JsTypes = new DataTypes()
 JsTypes.register('any', new AnyType())
