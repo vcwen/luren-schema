@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/vcwen/luren-schema/compare/v0.2.4...v0.2.5) (2020-08-16)
+
+
+### Features
+
+* **js-schema:** add ignoreAdditionalProperties attribute ([8192b7e](https://github.com/vcwen/luren-schema/commit/8192b7e6b9a7838b33f11144f9d611974624e5d1))
+
+
+### Bug Fixes
+
+* **js-schema:** fix preprocessor of simple type to js schema ([f0f8334](https://github.com/vcwen/luren-schema/commit/f0f83348b75e138b99f3a24c619559979f225e74))
+
 ### [0.2.4](https://github.com/vcwen/luren-schema/compare/v0.2.2...v0.2.4) (2020-07-03)
 
 
