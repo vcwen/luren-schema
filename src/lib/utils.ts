@@ -63,24 +63,7 @@ export const convertSimpleSchemaToJsSchema = (
   // tslint:disable-next-line: ban-types
   preprocessor?: (simpleSchema: any) => IJsSchema | undefined
 ): [IJsSchema, boolean] => {
-  if (!preprocessor) {
-    // tslint:disable-next-line: ban-types
-    preprocessor = (simSchema: any) => {
-      if (typeof simSchema === 'function') {
-        const schemaMetadata: SchemaMetadata | undefined = Reflect.getMetadata(
-          MetadataKey.SCHEMA,
-          simSchema.prototype
-        )
-        if (schemaMetadata) {
-          return schemaMetadata.schema
-        }
-      }
-    }
-  }
-  const schema = preprocessor(simpleSchema)
-  if (schema) {
-    return [schema, true]
-  }
+  simpleSchema = preprocessor ? preprocessor(simpleSchema) : simpleSchema
   if (typeof simpleSchema === 'function') {
     let type: string
     switch (simpleSchema) {
@@ -102,8 +85,14 @@ export const convertSimpleSchemaToJsSchema = (
       case Array:
         type = 'array'
         break
-      default:
-        throw new Error(`Invalid schema:${simpleSchema}`)
+      default: {
+        const definedSchema = getJsSchema(simpleSchema)
+        if (definedSchema) {
+          return [definedSchema, true]
+        } else {
+          throw new Error(`Invalid schema:${simpleSchema}`)
+        }
+      }
     }
     return [{ type }, true]
   }

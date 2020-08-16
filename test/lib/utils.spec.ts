@@ -199,8 +199,12 @@ describe('utils', () => {
     it('should convert function type', () => {
       class Foo {}
       expect(
-        utils.convertSimpleSchemaToJsSchema(Foo, () => {
-          return { type: 'string' }
+        utils.convertSimpleSchemaToJsSchema(Foo, (schema: any) => {
+          if (schema === Foo) {
+            return 'string'
+          } else {
+            return schema
+          }
         })
       ).toEqual([{ type: 'string' }, true])
     })
