@@ -201,9 +201,18 @@ describe('utils', () => {
       expect(
         utils.convertSimpleSchemaToJsSchema(Foo, (schema: any) => {
           if (schema === Foo) {
-            return 'string'
+            return [{ type: 'string' }, true]
           } else {
-            return schema
+            return [schema]
+          }
+        })
+      ).toEqual([{ type: 'string' }, true])
+      expect(
+        utils.convertSimpleSchemaToJsSchema(Foo, (schema: any) => {
+          if (schema === Foo) {
+            return ['string']
+          } else {
+            return [schema]
           }
         })
       ).toEqual([{ type: 'string' }, true])

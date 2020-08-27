@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { MetadataKey } from '../constants/MetadataKey'
 import { SchemaMetadata } from '../decorators/Schema'
-import { Constructor } from '../types'
+import { Constructor, SimpleType } from '../types'
 import { IJsSchema } from './JsSchema'
 import { Tuple } from './Tuple'
 
@@ -61,9 +61,16 @@ const normalizeProp = (decoratedProp: string): [string, boolean] => {
 export const convertSimpleSchemaToJsSchema = (
   simpleSchema: any,
   // tslint:disable-next-line: ban-types
-  preprocessor?: (simpleSchema: any) => IJsSchema | undefined
+  preprocessor?: (simpleSchema: any) => [SimpleType | IJsSchema, boolean?]
 ): [IJsSchema, boolean] => {
-  simpleSchema = preprocessor ? preprocessor(simpleSchema) : simpleSchema
+  if (preprocessor) {
+    const [schema, isJsSchema] = preprocessor(simpleSchema)
+    if (isJsSchema) {
+      return [schema as IJsSchema, true]
+    } else {
+      simpleSchema = schema
+    }
+  }
   if (typeof simpleSchema === 'function') {
     let type: string
     switch (simpleSchema) {
