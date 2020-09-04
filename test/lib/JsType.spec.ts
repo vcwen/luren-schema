@@ -178,13 +178,13 @@ describe('DateType', () => {
   const dateType = new DateType()
   describe('validate', () => {
     it('should validate the value', () => {
-      const res1 = dateType.validate(new Date())
+      const res1 = dateType.validate(new Date(), { type: 'date' })
       expect(res1.valid).toBeTruthy()
-      const res2 = dateType.validate('2019-07-21')
+      const res2 = dateType.validate('2019-07-21', { type: 'date' })
       expect(res2.valid).toBeFalsy()
-      const res3 = dateType.validate({ time: '2019-07-21' })
+      const res3 = dateType.validate({ time: '2019-07-21' }, { type: 'date' })
       expect(res3.valid).toBeFalsy()
-      const res4 = dateType.validate(null)
+      const res4 = dateType.validate(null, { type: 'date' })
       expect(res4.valid).toBeTruthy()
     })
   })
@@ -745,7 +745,7 @@ describe('ObjectType', () => {
         )
       }).toThrowError()
       expect(() => {
-        objectType.deserialize(
+        const res = objectType.deserialize(
           { foo: 'bar' },
           {
             type: 'object',

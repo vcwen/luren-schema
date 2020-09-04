@@ -45,4 +45,5 @@ export interface IJsSchema {
   minItems?: number
   maxItems?: number
   uniqueItems?: boolean
+  [key: string]: any
 }
